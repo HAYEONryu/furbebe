@@ -1,0 +1,53 @@
+{
+  "_fixture_metadata": {
+    "kind": "synthetic",
+    "purpose": "Offline envelope/parser tests; not real API observations or profiling evidence"
+  },
+  "response": {
+    "header": {
+      "reqNo": "fixture-only",
+      "resultCode": "00",
+      "resultMsg": "NORMAL SERVICE"
+    },
+    "body": {
+      "pageNo": 1,
+      "numOfRows": 100,
+      "totalCount": 2,
+      "items": {
+        "item": [
+          {
+            "desertionNo": "000000000000001",
+            "noticeNo": "FIXTURE-001",
+            "upKindNm": "개",
+            "kindNm": "믹스견",
+            "kindFullNm": "[개] 믹스견",
+            "age": "2022(년생)",
+            "weight": "7(Kg)",
+            "sexCd": "M",
+            "neuterYn": "U",
+            "processState": "보호중",
+            "happenDt": "20260901",
+            "noticeSdt": "20260901",
+            "noticeEdt": "20260912",
+            "updTm": "2026-09-09 21:12:11.0",
+            "careRegNo": "fixture-shelter",
+            "careNm": "테스트 보호소",
+            "orgNm": "세종특별자치시",
+            "careAddr": "세종특별자치시",
+            "specialMark": "사람을 경계함. 우측 뒷다리 절단. 119 인계",
+            "popfile1": "https://example.invalid/dog.jpg",
+            "popfile2": "https://example.invalid/dog.jpg"
+          },
+          {
+            "desertionNo": "000000000000002",
+            "upKindNm": "개",
+            "age": "미상",
+            "weight": "-",
+            "specialMark": ".",
+            "unexpectedFixtureField": "retained"
+          }
+        ]
+      }
+    }
+  }
+}
