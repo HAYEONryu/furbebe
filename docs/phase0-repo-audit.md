@@ -1,5 +1,23 @@
 # Phase 0 Repository Audit
 
+## 2026-09-15 실행 전 재검증
+
+이번 사용자 요청에 따라 Phase 0의 실행 전제조건을 다시 확인했다. 아래 2026-09-14 감사 본문은 당시 기록으로 보존한다.
+
+| 항목 | 이번 확인 결과 |
+| --- | --- |
+| Git 기준본 | `feat/phase0-1-profiling`, HEAD `41e498c29bc46e4f682b18b0da609d3f7c50dca8`; 실행 전 working tree와 index 모두 clean |
+| 이전 index 불일치 | `references.py`, `reports.py`, `region_evidence.py`가 같은 커밋에 포함됨. 이전의 미추적 모듈·함수 의존성 불일치 해소 |
+| 실행 환경 | Python 3.14.6; `pip check` 통과 |
+| 실행 검증 | `ruff check .` 통과; `pytest backend/tests -q` 139 passed |
+| 로컬 원본·키 보호 | `.env`, `.local/profiling/` Git 제외 확인; CLI의 추적 여부 검사 통과 |
+| 실제 API 사전 확인 | 2026-01-01~2026-09-14 조건의 1행 요청 성공, `items.item=array`, `totalCount=60,515`; 키·인증 URL 출력 없음 |
+| 실행 범위 | 현재 사용자 요청으로 신규 수집·프로파일링·보고서 작성 승인됨. 결과와 Blocker 보고 후 중단 |
+
+**판정: 이번 로컬 수집을 막는 Phase 0 실행 blocker는 확인되지 않았다.** 이전 감사의 “Phase 1 새 승인 필요”는 이번 요청으로 충족됐다. API 인증 성공은 아래 과거 키 노출 기록의 재발급 여부까지 확인한 결과는 아니다.
+
+---
+
 - 점검일: 2026-09-14, Asia/Seoul.
 - 대상: `C:\Users\tec\Desktop\vscode\FURBEBE`.
 - 이번 실행 범위: **Phase 0 현황 점검과 이 감사 문서 갱신만 수행**.

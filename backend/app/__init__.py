@@ -1,0 +1,1 @@
+"""FURBEBE HTTP application."""

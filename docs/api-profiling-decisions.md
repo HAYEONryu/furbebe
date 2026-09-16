@@ -1,5 +1,7 @@
 # API profiling decisions
 
+> 2026-09-15 최신 결정: 체중 A(5/10/20kg), 나이 A(0~1/2~4/5~8/9+), v1 animals_active 제외, 근거 있는 행동·건강 설명 선택 제공이 사용자 승인으로 확정됐다. [Phase 1.5 확정 기록](phase1-5-product-decisions.md)이 아래 Phase 1 당시 pending/proposal 표기보다 우선한다.
+
 Scope: Phase 0–1 only. Size, age, and animals_active decisions remain pending unless explicitly confirmed.
 
 ## Governing sources and confirmed chat decisions
@@ -46,21 +48,21 @@ Later explicit chat decisions override these documents.
 
 Decision: Animal unique key
 
-Evidence: Run 20260913T230733485043Z
+Evidence: Run 20260914T232312940282Z
 
 ```json
 {
-  "raw_item_count": 36000,
-  "unique_desertion_no_count": 35999,
+  "raw_item_count": 17000,
+  "unique_desertion_no_count": 17000,
   "unusable_id_count": 0,
   "unusable_id_ratio": 0.0,
   "missing_count": 0,
   "null_count": 0,
   "blank_count": 0,
   "non_string_count": 0,
-  "duplicate_item_count": 1,
-  "duplicate_ratio_raw": 2.8e-05,
-  "identical_duplicate_item_count": 1,
+  "duplicate_item_count": 0,
+  "duplicate_ratio_raw": 0.0,
+  "identical_duplicate_item_count": 0,
   "conflicting_additional_versions": 0,
   "conflicting_id_count": 0,
   "conflicting_id_ratio_unique": 0.0,
@@ -81,14 +83,14 @@ Revisit when: live results, source documentation or human review supplies eviden
 
 Decision: Dog filtering
 
-Evidence: Run 20260913T230733485043Z
+Evidence: Run 20260914T232312940282Z
 
 ```json
 {
-  "dog_count": 20471,
-  "non_dog_count": 15528,
+  "dog_count": 10507,
+  "non_dog_count": 6493,
   "unresolved_count": 0,
-  "dog_ratio": 0.568655,
+  "dog_ratio": 0.618059,
   "filter": "local exact upKindNm == 개; no server-side species assumption"
 }
 ```
@@ -105,51 +107,51 @@ Revisit when: live results, source documentation or human review supplies eviden
 
 Decision: Weight normalization
 
-Evidence: Run 20260913T230733485043Z
+Evidence: Run 20260914T232312940282Z
 
 ```json
 {
-  "denominator_nonplaceholder": 20471,
-  "parse_success": 20386,
-  "parse_failure": 85,
-  "parse_success_ratio": 0.995848,
-  "parse_failure_ratio": 0.004152,
-  "parseable_coverage_all_unique": 0.995848,
+  "denominator_nonplaceholder": 10507,
+  "parse_success": 10445,
+  "parse_failure": 62,
+  "parse_success_ratio": 0.994099,
+  "parse_failure_ratio": 0.005901,
+  "parseable_coverage_all_unique": 0.994099,
   "distribution": {
-    "count": 20386,
+    "count": 10445,
     "min": 0.0,
-    "p25": 2.7,
+    "p25": 2.8,
     "median": 5.0,
     "p75": 10.0,
-    "p95": 20.0,
-    "max": 870.0,
-    "mean": 7.439140586677131
+    "p95": 20.7,
+    "max": 52.05,
+    "mean": 7.430286261369076
   },
   "top_invalid": {
     "1~1.2(Kg)": 9,
     "3~3.5(Kg)": 8,
-    "2.5~3(Kg)": 6,
     "1.5~2(Kg)": 6,
-    "0.9~1(Kg)": 5,
     "2.5~3.0(Kg)": 5,
-    "2,5(Kg)": 4,
-    "19,2(Kg)": 3,
     "1,7(Kg)": 3,
     "2~2.5(Kg)": 3,
-    "12..00(Kg)": 2,
-    "2,6(Kg)": 2,
     "2.2~2.5(Kg)": 2,
+    "12..00(Kg)": 1,
     "12...00(Kg)": 1,
     "4,58(Kg)": 1,
     "7,52(Kg)": 1,
     "5..56(Kg)": 1,
     "1,5(Kg)": 1,
     "1,3(Kg)": 1,
-    "1,6(Kg)": 1
+    "1,6(Kg)": 1,
+    "6,4(Kg)": 1,
+    "24,2(Kg)": 1,
+    "7,2(Kg)": 1,
+    "1,1(Kg)": 1,
+    "6,3(Kg)": 1
   },
-  "zero_count": 17,
+  "zero_count": 11,
   "negative_count": 0,
-  "over_100kg_candidate": 5,
+  "over_100kg_candidate": 0,
   "extreme_definition": ">100kg diagnostic candidate, not a correction rule"
 }
 ```
@@ -166,29 +168,27 @@ Revisit when: live results, source documentation or human review supplies eviden
 
 Decision: Age normalization
 
-Evidence: Run 20260913T230733485043Z
+Evidence: Run 20260914T232312940282Z
 
 ```json
 {
-  "denominator_nonplaceholder": 20471,
-  "parse_success": 20469,
-  "parse_failure": 2,
-  "parse_success_ratio": 0.999902,
-  "parse_failure_ratio": 9.8e-05,
-  "parseable_coverage_all_unique": 0.999902,
+  "denominator_nonplaceholder": 10507,
+  "parse_success": 10507,
+  "parse_failure": 0,
+  "parse_success_ratio": 1.0,
+  "parse_failure_ratio": 0.0,
+  "parseable_coverage_all_unique": 1.0,
   "distribution": {
-    "count": 20469,
+    "count": 10507,
     "min": 2007,
     "p25": 2022.0,
     "median": 2024,
     "p75": 2026.0,
     "p95": 2026.0,
     "max": 2026,
-    "mean": 2023.5103326982266
+    "mean": 2023.3992576377652
   },
-  "top_invalid": {
-    "(년생)": 2
-  },
+  "top_invalid": {},
   "future_birth_year_count": 0,
   "observed_format_note": "Year-only and exact (60일미만)(년생) forms supported after live observation; no birth date inferred. Compare year_only_parser_coverage in observations."
 }
@@ -206,13 +206,13 @@ Revisit when: live results, source documentation or human review supplies eviden
 
 Decision: Sex mapping
 
-Evidence: Run 20260913T230733485043Z
+Evidence: Run 20260914T232312940282Z
 
 ```json
 {
-  "F": 9927,
-  "M": 10356,
-  "Q": 188
+  "M": 5239,
+  "F": 5162,
+  "Q": 106
 }
 ```
 
@@ -228,13 +228,13 @@ Revisit when: live results, source documentation or human review supplies eviden
 
 Decision: Neuter mapping
 
-Evidence: Run 20260913T230733485043Z
+Evidence: Run 20260914T232312940282Z
 
 ```json
 {
-  "U": 5548,
-  "N": 13341,
-  "Y": 1582
+  "N": 6731,
+  "U": 2990,
+  "Y": 786
 }
 ```
 
@@ -250,23 +250,22 @@ Revisit when: live results, source documentation or human review supplies eviden
 
 Decision: processState handling
 
-Evidence: Run 20260913T230733485043Z
+Evidence: Run 20260914T232312940282Z
 
 ```json
 {
   "policy_version": "notice-start-10-calendar-days-v1",
-  "as_of_date": "2026-09-14",
+  "as_of_date": "2026-09-15",
   "timezone": "Asia/Seoul (UTC+09:00)",
   "rule": "source processState=보호중 and today-noticeSdt >= 10 calendar days → 입양 가능",
   "display_state_frequencies": {
-    "종료(안락사)": 2508,
-    "종료(자연사)": 2097,
-    "종료(입양)": 4301,
-    "입양 가능": 5991,
-    "종료(기증)": 892,
-    "종료(반환)": 3612,
-    "보호중": 1068,
-    "종료(방사)": 2
+    "종료(입양)": 1569,
+    "종료(안락사)": 760,
+    "종료(자연사)": 843,
+    "입양 가능": 3909,
+    "종료(반환)": 1849,
+    "보호중": 1189,
+    "종료(기증)": 388
   },
   "issues": {},
   "note": "User-defined display label, not a new upstream state or shelter confirmation. noticeEdt and happenDt do not replace noticeSdt. Source payload unchanged. animals_active remains a separate launch decision."
@@ -285,7 +284,7 @@ Revisit when: live results, source documentation or human review supplies eviden
 
 Decision: Region source/mapping
 
-Evidence: Run 20260913T230733485043Z
+Evidence: Run 20260914T232312940282Z
 
 ```json
 {
@@ -295,13 +294,13 @@ Evidence: Run 20260913T230733485043Z
     "sigungu": "sigungu_v2.orgCd == org_cd"
   },
   "animal_join": "Exact official organization name; whitespace normalization only. Province self-row used only when its official code equals the parent code. For ambiguous names, every original dog ID must be confirmed by scoped source animal responses with one consistent code. No fuzzy alias or shelter-address inference.",
-  "mapped_dogs": 20471,
+  "mapped_dogs": 10507,
   "unresolved_dogs": 0,
   "ambiguous_dogs": 0,
   "unresolved_organization_counts": {},
   "ambiguous_organization_counts": {},
   "organizations_confirmed_by_scoped_animal_ids": {
-    "경상남도 창원시 의창성산구": 365
+    "경상남도 창원시 의창성산구": 211
   },
   "scoped_animal_evidence": [
     {
@@ -309,21 +308,21 @@ Evidence: Run 20260913T230733485043Z
       "org_cd": "5280000",
       "totalCount": 0,
       "rows": 0,
-      "capture_sha256": "151c7b65aad2ce126b384875445317e51db88e50c98c4e54c1d827320d4e2d36"
+      "capture_sha256": "6feff202bae2d34915c5483d4aeaab2a5a1d2ecfe7be384ab26a84f1ddaa6784"
     },
     {
       "upr_cd": "6480000",
       "org_cd": "5320000",
       "totalCount": 0,
       "rows": 0,
-      "capture_sha256": "fd7bd4049e8f1e5939841285eba49f00460d3f7a1bc81944740476ad75f29bcb"
+      "capture_sha256": "17ca9886fc4ca0fc8db726acf419dd4702d52ec35ee2dc50e05509b303b3ed8c"
     },
     {
       "upr_cd": "6480000",
       "org_cd": "5670000",
-      "totalCount": 656,
-      "rows": 656,
-      "capture_sha256": "a618ee12f8be10a3ee43c50bd34fe6d786415fd258b762b4271901e576a3dd0b"
+      "totalCount": 657,
+      "rows": 657,
+      "capture_sha256": "281d4eddfb309ef91edd50edb582c6a2bab6ead89ff8a40ab2031d5b210bd9fc"
     }
   ],
   "organization_code_mapping": {
@@ -1707,30 +1706,30 @@ Revisit when: live results, source documentation or human review supplies eviden
 
 Decision: Main image policy
 
-Evidence: Run 20260913T230733485043Z
+Evidence: Run 20260914T232312940282Z
 
 ```json
 {
   "zero_images": 1,
-  "one_image": 1,
-  "two_images": 17944,
-  "three_plus_images": 2525,
-  "average_images_per_animal": 2.3178642958331297,
-  "primary_image_coverage": 0.999951,
+  "one_image": 0,
+  "two_images": 9388,
+  "three_plus_images": 1118,
+  "average_images_per_animal": 2.255258399162463,
+  "primary_image_coverage": 0.999905,
   "duplicate_url_within_animal": 2,
   "url_schemes": {
-    "http": 47589
+    "http": 23762
   },
   "extensions": {
-    "jpg": 42370,
-    "jpeg": 2194,
-    "png": 3025
+    "jpg": 21158,
+    "jpeg": 1014,
+    "png": 1590
   },
   "invalid_url_shape": 0,
-  "nonplaceholder_url_values": 47589,
+  "nonplaceholder_url_values": 23762,
   "urls_shared_by_distinct_animals": 0,
   "url_hosts": {
-    "openapi.animal.go.kr": 47589
+    "openapi.animal.go.kr": 23762
   },
   "notes": "Primary = first valid popfile1..8 URL, deduplicated in source order. No image requests; URL coverage is not image availability."
 }
@@ -1748,95 +1747,93 @@ Revisit when: live results, source documentation or human review supplies eviden
 
 Decision: Meaningful text policy
 
-Evidence: Run 20260913T230733485043Z
+Evidence: Run 20260914T232312940282Z
 
 ```json
 {
   "specialMark": {
     "presence_ratio": 1.0,
-    "meaningful_ratio": 0.961311,
-    "placeholder_ratio": 0.038689,
-    "median_length_nonblank": 16,
-    "p95_length_nonblank": 49.0,
+    "meaningful_ratio": 0.958409,
+    "placeholder_ratio": 0.041591,
+    "median_length_nonblank": 17,
+    "p95_length_nonblank": 50.0,
     "classes": {
-      "DESCRIPTIVE": 8076,
-      "BEHAVIOR_RELATED": 8212,
-      "HEALTH_RELATED": 1241,
-      "MIXED": 1188,
-      "PLACEHOLDER": 792,
-      "ADMINISTRATIVE": 962
+      "BEHAVIOR_RELATED": 4236,
+      "DESCRIPTIVE": 4056,
+      "HEALTH_RELATED": 671,
+      "MIXED": 623,
+      "ADMINISTRATIVE": 484,
+      "PLACEHOLDER": 437
     },
-    "behavior_candidates": 9279,
-    "health_candidates": 2131,
-    "administrative_candidates": 1413,
-    "short_text_candidates": 1044,
-    "negation_markers": 1322
+    "behavior_candidates": 4792,
+    "health_candidates": 1152,
+    "administrative_candidates": 715,
+    "short_text_candidates": 561,
+    "negation_markers": 708
   },
   "sfeSoci": {
-    "presence_ratio": 0.015241,
-    "meaningful_ratio": 0.015192,
-    "placeholder_ratio": 4.9e-05,
-    "median_length_nonblank": 27.0,
+    "presence_ratio": 0.015609,
+    "meaningful_ratio": 0.015609,
+    "placeholder_ratio": 0.0,
+    "median_length_nonblank": 26.5,
     "p95_length_nonblank": 35.0,
     "classes": {
-      "EMPTY": 20159,
-      "BEHAVIOR_RELATED": 131,
-      "DESCRIPTIVE": 167,
-      "PLACEHOLDER": 1,
-      "HEALTH_RELATED": 1,
-      "MIXED": 3,
-      "ADMINISTRATIVE": 9
+      "EMPTY": 10343,
+      "BEHAVIOR_RELATED": 54,
+      "DESCRIPTIVE": 100,
+      "MIXED": 2,
+      "ADMINISTRATIVE": 8
     },
-    "behavior_candidates": 134,
-    "health_candidates": 2,
-    "administrative_candidates": 11,
-    "short_text_candidates": 2,
+    "behavior_candidates": 56,
+    "health_candidates": 0,
+    "administrative_candidates": 10,
+    "short_text_candidates": 0,
     "negation_markers": 0
   },
   "sfeHealth": {
-    "presence_ratio": 0.014313,
-    "meaningful_ratio": 0.008402,
-    "placeholder_ratio": 0.005911,
+    "presence_ratio": 0.014371,
+    "meaningful_ratio": 0.009042,
+    "placeholder_ratio": 0.00533,
     "median_length_nonblank": 8,
     "p95_length_nonblank": 39.0,
     "classes": {
-      "EMPTY": 20178,
-      "DESCRIPTIVE": 127,
-      "PLACEHOLDER": 121,
-      "HEALTH_RELATED": 30,
-      "MIXED": 15
+      "EMPTY": 10356,
+      "DESCRIPTIVE": 74,
+      "HEALTH_RELATED": 18,
+      "PLACEHOLDER": 56,
+      "MIXED": 3
     },
     "behavior_candidates": 0,
-    "health_candidates": 45,
-    "administrative_candidates": 15,
-    "short_text_candidates": 121,
-    "negation_markers": 96
+    "health_candidates": 21,
+    "administrative_candidates": 3,
+    "short_text_candidates": 56,
+    "negation_markers": 57
   },
   "etcBigo": {
-    "presence_ratio": 0.076889,
+    "presence_ratio": 0.070905,
     "meaningful_ratio": 0.0,
-    "placeholder_ratio": 0.076889,
-    "median_length_nonblank": 1.0,
+    "placeholder_ratio": 0.070905,
+    "median_length_nonblank": 1,
     "p95_length_nonblank": 1.0,
     "classes": {
-      "EMPTY": 18897,
-      "PLACEHOLDER": 1574
+      "EMPTY": 9762,
+      "PLACEHOLDER": 745
     },
     "behavior_candidates": 0,
     "health_candidates": 0,
     "administrative_candidates": 0,
-    "short_text_candidates": 1574,
+    "short_text_candidates": 745,
     "negation_markers": 0
   },
   "adptnTxt": {
-    "presence_ratio": 0.006741,
-    "meaningful_ratio": 0.006741,
+    "presence_ratio": 0.006091,
+    "meaningful_ratio": 0.006091,
     "placeholder_ratio": 0.0,
     "median_length_nonblank": 194.0,
     "p95_length_nonblank": 194.0,
     "classes": {
-      "EMPTY": 20333,
-      "DESCRIPTIVE": 138
+      "EMPTY": 10443,
+      "DESCRIPTIVE": 64
     },
     "behavior_candidates": 0,
     "health_candidates": 0,
@@ -1859,17 +1856,17 @@ Revisit when: live results, source documentation or human review supplies eviden
 
 Decision: Personality trait eligibility
 
-Evidence: Run 20260913T230733485043Z
+Evidence: Run 20260914T232312940282Z
 
 ```json
 {
-  "any_behavior": 0.456841,
-  "any_health": 0.105857,
-  "any_administrative": 0.069757,
-  "behavior_and_health": 0.038835,
-  "administrative_only": 0.046944,
-  "only_specialMark_behavior": 0.450296,
-  "sfeSoci_behavior": 0.006546,
+  "any_behavior": 0.458837,
+  "any_health": 0.110974,
+  "any_administrative": 0.068335,
+  "behavior_and_health": 0.040449,
+  "administrative_only": 0.046065,
+  "only_specialMark_behavior": 0.453507,
+  "sfeSoci_behavior": 0.00533,
   "adoption_description_behavior": 0.0
 }
 ```
@@ -1886,13 +1883,13 @@ Revisit when: live results, source documentation or human review supplies eviden
 
 Decision: Health text handling
 
-Evidence: Run 20260913T230733485043Z
+Evidence: Run 20260914T232312940282Z
 
 ```json
 {
-  "vaccinationChk": 0.169459,
-  "healthChk": 0.136779,
-  "sfeHealth": 0.014313
+  "vaccinationChk": 0.159227,
+  "healthChk": 0.132007,
+  "sfeHealth": 0.014371
 }
 ```
 
@@ -1908,20 +1905,20 @@ Revisit when: live results, source documentation or human review supplies eviden
 
 Decision: Adoption promotion storage
 
-Evidence: Run 20260913T230733485043Z
+Evidence: Run 20260914T232312940282Z
 
 ```json
 {
   "fields": {
-    "adptnTitle": 0.006741,
-    "adptnSDate": 0.006741,
-    "adptnEDate": 0.006741,
-    "adptnConditionLimitTxt": 0.006741,
-    "adptnTxt": 0.006741,
-    "adptnImg": 0.006741
+    "adptnTitle": 0.006091,
+    "adptnSDate": 0.006091,
+    "adptnEDate": 0.006091,
+    "adptnConditionLimitTxt": 0.006091,
+    "adptnTxt": 0.006091,
+    "adptnImg": 0.006091
   },
-  "any_ratio": 0.006741,
-  "complete_ratio": 0.006741
+  "any_ratio": 0.006091,
+  "complete_ratio": 0.006091
 }
 ```
 
@@ -1937,23 +1934,23 @@ Revisit when: live results, source documentation or human review supplies eviden
 
 Decision: Size group thresholds
 
-Evidence: Run 20260913T230733485043Z
+Evidence: Run 20260914T232312940282Z
 
 ```json
 {
   "literal_contract": {
-    "medium": 3648,
-    "tiny": 10720,
-    "small": 5037,
-    "large": 981,
-    "unknown": 85
+    "tiny": 5426,
+    "large": 538,
+    "medium": 1970,
+    "small": 2511,
+    "unknown": 62
   },
   "quality_policy_candidate": {
-    "medium": 3648,
-    "tiny": 10703,
-    "small": 5037,
-    "large": 981,
-    "unknown": 102
+    "tiny": 5415,
+    "large": 538,
+    "medium": 1970,
+    "small": 2511,
+    "unknown": 73
   },
   "note": "Existing contract thresholds evaluated, not finalized or changed. The proposed size counts exclude zero/negative weights; this quality policy is not approved for production. Literal contract counts are shown separately. >100kg values remain diagnostic large candidates, not validated measurements. Future birth years excluded from proposed age groups."
 }
@@ -1971,15 +1968,14 @@ Revisit when: live results, source documentation or human review supplies eviden
 
 Decision: Age group thresholds
 
-Evidence: Run 20260913T230733485043Z
+Evidence: Run 20260914T232312940282Z
 
 ```json
 {
-  "young": 6101,
-  "puppy": 10081,
-  "adult": 3127,
-  "senior": 1160,
-  "unknown": 2
+  "puppy": 4920,
+  "adult": 1770,
+  "young": 3220,
+  "senior": 597
 }
 ```
 
@@ -1995,11 +1991,11 @@ Revisit when: live results, source documentation or human review supplies eviden
 
 Decision: animals_active definition
 
-Evidence: Run 20260913T230733485043Z
+Evidence: Run 20260914T232312940282Z
 
 ```json
 {
-  "protecting_only_candidate": 7059,
+  "protecting_only_candidate": 5098,
   "adoption_eligibility_established": false
 }
 ```

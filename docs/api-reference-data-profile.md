@@ -1,13 +1,13 @@
 # 공식 참조 코드·상태 정책 검증
 
-동물 run: 20260913T230733485043Z; 상태 분석 기준일: 2026-09-14 (Asia/Seoul).
+동물 run: 20260914T232312940282Z; 상태 분석 기준일: 2026-09-15 (Asia/Seoul).
 범위: Phase 0–1. FastAPI endpoint 및 DB schema 구현 없음.
 
 ## 최신 결정과 측정 결과
 
 - 프로젝트 `sido` 코드 = OpenAPI `upr_cd`, `sigungu` 코드 = `org_cd`.
 - `sido_v2.orgCd`가 시도 코드, `sigungu_v2.orgCd`가 시군구 코드이며 `uprCd`로 소속을 확인합니다.
-- 고유 개 20,471건 중 코드 연결 20,471건,
+- 고유 개 10,507건 중 코드 연결 10,507건,
   미매칭 0건, 다중 후보 0건입니다.
 - `processState=보호중`이고 `한국 날짜 - noticeSdt >= 10일`이면 표시 상태는 `입양 가능`입니다.
   10일 미만은 `보호중`, 다른 원문 상태는 유지합니다. 정확히 10일째부터 적용합니다.
@@ -27,17 +27,20 @@ JSON 원문은 `.local/profiling/` 밖으로 저장하지 않으며 키를 로�
 
 ## 현재 결과
 
-공식 목록 재조회 후에도 없는 품종 코드에 해당하는 동물은 1,022건입니다.
-보호소 코드 15개는 해당 관할의 현재 보호소 목록에 없으며, 해당 개는 1,057건입니다.
+이번 실행은 2026-09-14 09:14~13:40 KST에 조회한 공식 코드 캐시의 247개 범위를 재사용했습니다.
+코드 목록을 새로 호출한 횟수는 0이며, 변경된 날짜 조건의 지역 연결 증거를 위해 동물 API 3페이지를 추가 조회했습니다.
+저장된 공식 목록에 없는 품종 코드 6개에 해당하는 개는 531건입니다.
+보호소 코드 11개는 해당 관할의 저장된 보호소 목록에 없으며, 해당 개는 479건입니다.
 폐지·변경 여부나 원인은 아직 확인하지 않았습니다. 원문 코드와 이름을 유지하고 임의의 다른 코드로 연결하지 않습니다.
-이 항목들은 지역 코드 매칭 성공 여부와 구분해 계속 보고하며, 캐시에 조회 이력을 저장했습니다.
+이 항목들은 지역 코드 매칭 성공 여부와 구분해 계속 보고하며, 캐시의 기존 조회 이력을 유지했습니다.
+네트워크를 차단한 재검증에서도 참조 분석 결과가 일치했고 캐시 247회를 재사용했습니다.
 
 
 ```json
 {
   "version": 1,
-  "as_of_date": "2026-09-14",
-  "denominator_unique_dogs": 20471,
+  "as_of_date": "2026-09-15",
+  "denominator_unique_dogs": 10507,
   "region": {
     "source": "sido_v2.orgCd → upr_cd; sigungu_v2.orgCd → org_cd",
     "normalization_policy": {
@@ -45,13 +48,13 @@ JSON 원문은 `.local/profiling/` 밖으로 저장하지 않으며 키를 로�
       "sigungu": "sigungu_v2.orgCd == org_cd"
     },
     "animal_join": "Exact official organization name; whitespace normalization only. Province self-row used only when its official code equals the parent code. For ambiguous names, every original dog ID must be confirmed by scoped source animal responses with one consistent code. No fuzzy alias or shelter-address inference.",
-    "mapped_dogs": 20471,
+    "mapped_dogs": 10507,
     "unresolved_dogs": 0,
     "ambiguous_dogs": 0,
     "unresolved_organization_counts": {},
     "ambiguous_organization_counts": {},
     "organizations_confirmed_by_scoped_animal_ids": {
-      "경상남도 창원시 의창성산구": 365
+      "경상남도 창원시 의창성산구": 211
     },
     "scoped_animal_evidence": [
       {
@@ -59,21 +62,21 @@ JSON 원문은 `.local/profiling/` 밖으로 저장하지 않으며 키를 로�
         "org_cd": "5280000",
         "totalCount": 0,
         "rows": 0,
-        "capture_sha256": "151c7b65aad2ce126b384875445317e51db88e50c98c4e54c1d827320d4e2d36"
+        "capture_sha256": "6feff202bae2d34915c5483d4aeaab2a5a1d2ecfe7be384ab26a84f1ddaa6784"
       },
       {
         "upr_cd": "6480000",
         "org_cd": "5320000",
         "totalCount": 0,
         "rows": 0,
-        "capture_sha256": "fd7bd4049e8f1e5939841285eba49f00460d3f7a1bc81944740476ad75f29bcb"
+        "capture_sha256": "17ca9886fc4ca0fc8db726acf419dd4702d52ec35ee2dc50e05509b303b3ed8c"
       },
       {
         "upr_cd": "6480000",
         "org_cd": "5670000",
-        "totalCount": 656,
-        "rows": 656,
-        "capture_sha256": "a618ee12f8be10a3ee43c50bd34fe6d786415fd258b762b4271901e576a3dd0b"
+        "totalCount": 657,
+        "rows": 657,
+        "capture_sha256": "281d4eddfb309ef91edd50edb582c6a2bab6ead89ff8a40ab2031d5b210bd9fc"
       }
     ],
     "organization_code_mapping": {
@@ -1446,76 +1449,69 @@ JSON 원문은 `.local/profiling/` 밖으로 저장하지 않으며 키를 로�
   "shelter": {
     "requested_scopes": 227,
     "catalog_memberships": 330,
-    "matched_dogs": 19414,
+    "matched_dogs": 10028,
     "missing_careRegNo_counts": {
-      "311308201000001": 49,
-      "311315200900001": 50,
-      "311321200900002": 26,
-      "326333201100001": 74,
-      "327348201700002": 22,
-      "328349201000001": 7,
-      "328353200900001": 3,
-      "328356202600003": 45,
-      "341374202500002": 1,
-      "341553202500001": 408,
-      "341570201900003": 159,
-      "343442202200001": 15,
-      "344455202300001": 58,
-      "344458201300001": 31,
-      "369569202000001": 109
+      "311308201000001": 30,
+      "311315200900001": 32,
+      "311321200900002": 15,
+      "326333201100001": 22,
+      "327348201700002": 14,
+      "341553202500001": 214,
+      "341570201900003": 68,
+      "343442202200001": 11,
+      "344455202300001": 26,
+      "344458201300001": 18,
+      "369569202000001": 29
     },
     "note": "Shelter membership is scoped by upr_cd/org_cd/careRegNo. A shared shelter does not identify an animal's jurisdiction. Missing catalog entries retained."
   },
   "breed": {
     "417000": {
       "catalog_count": 206,
-      "animals": 20471,
+      "animals": 10507,
       "missing_code_counts": {
-        "000128": 986,
-        "000142": 15,
-        "000126": 15,
+        "000128": 508,
+        "000142": 11,
+        "000126": 8,
         "000127": 2,
-        "000151": 2,
         "000036": 1,
-        "000026": 1
+        "000151": 1
       },
       "name_difference_count": 0
     },
     "422400": {
       "catalog_count": 38,
-      "animals": 14747,
+      "animals": 6098,
       "missing_code_counts": {},
       "name_difference_count": 0
     },
     "429900": {
       "catalog_count": 1,
-      "animals": 781,
+      "animals": 395,
       "missing_code_counts": {},
       "name_difference_count": 0
     }
   },
   "status_policy": {
     "policy_version": "notice-start-10-calendar-days-v1",
-    "as_of_date": "2026-09-14",
+    "as_of_date": "2026-09-15",
     "timezone": "Asia/Seoul (UTC+09:00)",
     "rule": "source processState=보호중 and today-noticeSdt >= 10 calendar days → 입양 가능",
     "display_state_frequencies": {
-      "종료(안락사)": 2508,
-      "종료(자연사)": 2097,
-      "종료(입양)": 4301,
-      "입양 가능": 5991,
-      "종료(기증)": 892,
-      "종료(반환)": 3612,
-      "보호중": 1068,
-      "종료(방사)": 2
+      "종료(입양)": 1569,
+      "종료(안락사)": 760,
+      "종료(자연사)": 843,
+      "입양 가능": 3909,
+      "종료(반환)": 1849,
+      "보호중": 1189,
+      "종료(기증)": 388
     },
     "issues": {},
     "note": "User-defined display label, not a new upstream state or shelter confirmation. noticeEdt and happenDt do not replace noticeSdt. Source payload unchanged. animals_active remains a separate launch decision."
   },
   "cache": {
-    "cache_hits": 94,
-    "network_pages": 153,
-    "catalog_fetches": 153
+    "cache_hits": 247,
+    "organization_evidence_network_pages": 3
   },
   "blockers": [],
   "launch_decisions_still_pending": [
@@ -1523,17 +1519,9 @@ JSON 원문은 `.local/profiling/` 밖으로 저장하지 않으며 키를 로�
     "age thresholds",
     "animals_active definition"
   ],
-  "animal_run_id": "20260913T230733485043Z",
-  "animal_raw_sha256": "e304896747ef7a2bf52a735dbe54ace64407ba31d52ed27b41d370f39a6f510a",
-  "reference_cache_sha256": "10d87e6277ae7563fe7e24751eb5bcbdcfc9679687d772778cf90e3544ea3629",
-  "cache_reuse_verification": {
-    "unexpected_network_calls": 0,
-    "cache": {
-      "cache_hits": 247
-    },
-    "region_mapped": 20471,
-    "blockers": []
-  }
+  "animal_run_id": "20260914T232312940282Z",
+  "animal_raw_sha256": "866801be3c2bda927a0d292b4c43df0dfab1fcabc6fd7e07dcd0271b24c9de92",
+  "reference_cache_sha256": "10d87e6277ae7563fe7e24751eb5bcbdcfc9679687d772778cf90e3544ea3629"
 }
 ```
 

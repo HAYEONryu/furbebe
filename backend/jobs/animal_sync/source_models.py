@@ -2,7 +2,63 @@
 
 from typing import Any
 
-from pydantic import ConfigDict, RootModel
+from pydantic import BaseModel, ConfigDict, RootModel, field_validator
+
+from .parsing import meaningful
+
+
+class ValidatedAnimal(BaseModel):
+    """Strict production boundary; unknown fields and missing keys remain in the raw snapshot."""
+
+    model_config = ConfigDict(strict=True, extra="allow", hide_input_in_errors=True)
+
+    desertionNo: str
+    noticeNo: str | None = None
+    rfidCd: str | None = None
+    upKindCd: str | None = None
+    upKindNm: str | None = None
+    kindCd: str | None = None
+    kindNm: str | None = None
+    kindFullNm: str | None = None
+    sexCd: str | None = None
+    neuterYn: str | None = None
+    age: str | None = None
+    weight: str | None = None
+    colorCd: str | None = None
+    happenDt: str | None = None
+    happenPlace: str | None = None
+    processState: str | None = None
+    endReason: str | None = None
+    noticeSdt: str | None = None
+    noticeEdt: str | None = None
+    specialMark: str | None = None
+    sfeSoci: str | None = None
+    sfeHealth: str | None = None
+    etcBigo: str | None = None
+    vaccinationChk: str | None = None
+    healthChk: str | None = None
+    careRegNo: str | None = None
+    careNm: str | None = None
+    careTel: str | None = None
+    careAddr: str | None = None
+    careOwnerNm: str | None = None
+    orgNm: str | None = None
+    updTm: str | None = None
+    popfile1: str | None = None
+    popfile2: str | None = None
+    popfile3: str | None = None
+    popfile4: str | None = None
+    popfile5: str | None = None
+    popfile6: str | None = None
+    popfile7: str | None = None
+    popfile8: str | None = None
+
+    @field_validator("desertionNo")
+    @classmethod
+    def usable_identity(cls, value):
+        if not meaningful(value):
+            raise ValueError("Source identity is required")
+        return value
 
 
 class SourceAnimalItem(RootModel[dict[str, Any]]):
