@@ -6,6 +6,7 @@ Only aggregates and test outcomes are saved to .local/phase5/dev-api-verificatio
 
 import hashlib
 import json
+import re
 import socket
 import threading
 import time
@@ -57,7 +58,7 @@ def database_snapshot(engine):
         return result
 
 
-def verify():
+def verify(*, progress=None):
     settings = get_dev_database_settings()
     engine = create_database_engine(settings)
     server = worker = sock = observed_engine = None
@@ -70,6 +71,8 @@ def verify():
     }
 
     def observe(connection, cursor, statement, parameters, context, executemany):
+        if re.fullmatch(r"SET LOCAL statement_timeout = [0-9]+", statement):
+            return  # Transaction setting, not a data query or mutation.
         kind = statement.lstrip().split(None, 1)[0].upper()
         require(kind in {"SELECT", "WITH"}, "unexpected_non_read_statement")
         sql_events.append(
@@ -99,7 +102,10 @@ def verify():
             def get(label, path, *, params=None, status=200):
                 sql_events.clear()
                 started = time.perf_counter()
-                response = client.get(path, params=params)
+                try:
+                    response = client.get(path, params=params)
+                except httpx.HTTPError:
+                    raise VerificationFailure(label + "_http_error") from None
                 elapsed = round((time.perf_counter() - started) * 1000, 2)
                 report["requests"].append(
                     {
@@ -109,6 +115,8 @@ def verify():
                         "sql_queries": len(sql_events),
                     }
                 )
+                if progress is not None:
+                    progress(report["requests"][-1])
                 require(response.status_code == status, label)
                 require(bool(response.headers.get("x-request-id")), label + "_request_id")
                 require(
@@ -264,7 +272,7 @@ def main():
     output = (ROOT / ".local" / "phase5").resolve()
     try:
         require(output.is_relative_to(ROOT), "local_output_directory")
-        report = verify()
+        report = verify(progress=lambda result: print(json.dumps(result), flush=True))
     except Exception as exc:
         report = {
             "status": "failed",

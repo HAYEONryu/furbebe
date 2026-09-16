@@ -57,6 +57,10 @@ class ReadRepository:
             ) as connection,
             connection.begin(),
         ):
+            # Session poolers may ignore startup options (DEV reports 2min instead
+            # of our 5s). Keep the configured bound local to this read transaction.
+            timeout_ms = int(getattr(self.database, "statement_timeout_ms", 5000))
+            connection.exec_driver_sql(f"SET LOCAL statement_timeout = {timeout_ms}")
             yield AnimalQueries(connection, today)
 
 
@@ -192,13 +196,16 @@ class AnimalQueries:
                 )
             )
         if filters.tag:
-            tag_rows = select(self.tags_view.c.key).where(self.tags_view.c.animal_id == Animal.id)
-            if filters.tag_match == "any":
-                conditions.append(exists(tag_rows.where(self.tags_view.c.key.in_(filters.tag))))
-            else:
-                conditions.extend(
-                    exists(tag_rows.where(self.tags_view.c.key == key)) for key in filters.tag
+            matching_ids = select(self.tags_view.c.animal_id).where(
+                self.tags_view.c.key.in_(filters.tag)
+            )
+            if filters.tag_match == "all":
+                # The visible view has one row per animal/key. Group once rather
+                # than repeating a correlated scan for every requested tag.
+                matching_ids = matching_ids.group_by(self.tags_view.c.animal_id).having(
+                    func.count() == len(filters.tag)
                 )
+            conditions.append(Animal.id.in_(matching_ids))
         return conditions
 
     def sort_columns(self, sort):
@@ -298,20 +305,19 @@ class AnimalQueries:
         ):
             score += case((condition, points), else_=0)
         source_tags = select(self.tags_view.c.key).where(self.tags_view.c.animal_id == source["id"])
-        shared_count = (
-            select(func.count())
-            .select_from(self.tags_view)
-            .where(
-                self.tags_view.c.animal_id == Animal.id,
-                self.tags_view.c.key.in_(source_tags),
-            )
-            .correlate(Animal)
-            .scalar_subquery()
+        # Aggregate once, then join once. A correlated scan of the ranked-tag CTE
+        # for every candidate timed out on the 7,290-animal DEV dataset.
+        shared_counts = (
+            select(self.tags_view.c.animal_id, func.count().label("tag_count"))
+            .where(self.tags_view.c.key.in_(source_tags))
+            .group_by(self.tags_view.c.animal_id)
+            .subquery("shared_tag_counts")
         )
-        score += shared_count * 2
+        score += func.coalesce(shared_counts.c.tag_count, 0) * 2
         rows = (
             self.connection.execute(
                 self.projection()
+                .outerjoin(shared_counts, shared_counts.c.animal_id == Animal.id)
                 .where(Animal.id != source["id"])
                 .order_by(score.desc(), *self.sort_columns("recent"))
                 .limit(limit)

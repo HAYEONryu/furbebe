@@ -35,6 +35,7 @@ def create_database_engine(settings: Settings) -> Engine:
 
 class Database:
     def __init__(self, settings: Settings):
+        self.statement_timeout_ms = settings.db_statement_timeout_ms
         self.engine = create_database_engine(settings) if settings.database_url else None
         self.sessions = (
             sessionmaker(bind=self.engine, expire_on_commit=False) if self.engine else None

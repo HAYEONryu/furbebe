@@ -375,6 +375,7 @@ def test_read_repository_rejects_writes_and_leaves_data_unchanged(env):
     with repository.snapshot(TODAY) as queries:
         assert queries.connection.scalar(text("SHOW transaction_read_only")) == "on"
         assert queries.connection.scalar(text("SHOW transaction_isolation")) == "repeatable read"
+        assert queries.connection.scalar(text("SHOW statement_timeout")) == "5s"
         with pytest.raises(DBAPIError) as failure:
             queries.connection.execute(
                 insert(Tag).values(key="forbidden", type="fact", label="should not write")
@@ -394,3 +395,12 @@ def test_unsupported_images_are_not_given_an_invented_type(env):
         )
     assert detail(env, 8)["images"] == []
     assert env.client.get("/api/v1/stats/overview").json()["with_primary_image"] == 39
+
+
+def test_transaction_timeout_uses_configuration_and_cancels_slow_sql(env):
+    repository = ReadRepository(SimpleNamespace(engine=env.engine, statement_timeout_ms=100))
+    with repository.snapshot(TODAY) as queries:
+        assert queries.connection.scalar(text("SHOW statement_timeout")) == "100ms"
+        with pytest.raises(DBAPIError) as failure:
+            queries.connection.execute(text("SELECT pg_sleep(0.2)"))
+        assert failure.value.orig.sqlstate == "57014"
