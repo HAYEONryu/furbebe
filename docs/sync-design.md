@@ -4,7 +4,8 @@
 
 Supabase DEV migration과 smoke sync 2회, API 기본 조회의 전 페이지 sync를 완료했다.
 중단 전에 끝난 적재 결과를 재개 시점에 읽기 전용 SQL과 원본 capture로 대조했으며,
-전체 pytest를 별도 로컬 PostgreSQL에서 다시 실행했다. Phase 5는 별도 승인 후 진행한다.
+전체 pytest를 별도 로컬 PostgreSQL에서 다시 실행했다. 이 문서는 Phase 4B 당시 기록이다.
+후속 승인으로 구현한 읽기 API의 현재 결과는 [Phase 5 완료 보고](phase5-read-api.md)에 있다.
 
 ## 연결과 schema
 
@@ -241,4 +242,5 @@ API는 페이지 사이의 snapshot isolation을 보장하지 않는다. 같은 
 Supabase Data API·Edge Functions·Realtime·Frontend client는 추가하지 않았다.
 Docker build/run은 **미검증 유지**이며 deployment 단계에서 검증한다.
 
-Phase 4B 검증 blocker는 없다. **Phase 5 진행 가능; 사용자 승인 후 시작한다.**
+Phase 4B 검증 blocker는 없다. 당시 Phase 5 진행 가능으로 보고했으며,
+후속 사용자 승인에 따른 구현·검증 결과는 [Phase 5 완료 보고](phase5-read-api.md)에 기록한다.

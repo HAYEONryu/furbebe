@@ -215,12 +215,27 @@ class ReadService:
                 if name != "count" and value is not None:
                     counters[name][value] += row["count"]
         regions = defaultdict(set)
+        region_labels = {}
+        child_labels = {}
         for organization in counters["organizations"]:
             if region := region_for(organization):
                 regions[region["sido_code"]].add(region["sigungu_code"])
+                region_labels[region["sido_code"]] = region["sido_name"]
+                child_labels[(region["sido_code"], region["sigungu_code"])] = (
+                    region["sigungu_name"]
+                    or (region["sido_name"] if region["sigungu_code"] == region["sido_code"]
+                        else region["sigungu_code"])
+                )
         return FilterMetaResponse(
             regions=[
-                {"sido": parent, "sigungu": sorted(children)}
+                {
+                    "sido": parent,
+                    "sigungu": sorted(children),
+                    "sido_label": region_labels[parent],
+                    "sigungu_labels": {
+                        child: child_labels[(parent, child)] for child in sorted(children)
+                    },
+                }
                 for parent, children in sorted(regions.items())
             ],
             breeds=[

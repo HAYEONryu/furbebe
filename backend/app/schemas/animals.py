@@ -216,6 +216,8 @@ class TagListResponse(BaseModel):
 class RegionFilterResponse(BaseModel):
     sido: str
     sigungu: list[str]
+    sido_label: str | None = None
+    sigungu_labels: dict[str, str] = Field(default_factory=dict)
 
 
 class FilterOptionResponse(BaseModel):

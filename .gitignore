@@ -14,3 +14,11 @@ dist/
 .local/
 tmp/
 profiling_raw/
+
+# Frontend build/runtime artifacts; local browser verification outputs.
+frontend/build/
+frontend/.react-router/
+frontend/.wrangler/
+frontend/coverage/
+.playwright-cli/
+output/playwright/

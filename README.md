@@ -1,7 +1,67 @@
-# FURBEBE — Phase 4B Supabase DEV Sync
+# FURBEBE — Phase 7 Main + Dogs Listing
 
-FastAPI·도메인 DB 기반의 동물 수집·정규화·UPSERT를 Supabase DEV PostgreSQL에서 검증했습니다.
-현재 endpoint는 `/health`이며 실제 PostgreSQL 연결을 확인합니다.
+React Router Framework + React + Vite + JavaScript/JSX + Tailwind 기반의 프런트엔드를
+`frontend/`에 구현했습니다. Cloudflare Workers SSR loader가 FastAPI v1을 호출하며,
+데이터 경계는 React → FastAPI → PostgreSQL입니다.
+`/`는 실제 API 사진을 사용하는 Hero·Quick Discovery·최근 등록 동물을,
+`/dogs`는 검색·필터·정렬·페이지·관심 저장을 제공합니다. `/dogs/:animalId`는 Phase 6의 기본 상세 화면입니다.
+사용자 선택에 따라 개·고양이·기타 구조동물을 함께 표시합니다.
+필터·정렬·페이지는 URL에 보존하며, 품종·지역·상태·그룹 옵션은 FastAPI 메타를 사용합니다.
+지역명을 표시하기 위해 기존 지역 코드 응답에 `sido_label`·`sigungu_labels`를 호환 확장했습니다.
+
+## Frontend 실행
+
+Node.js 22.22 이상이 필요하며 Node.js 24.18.0 / npm 12.0.2에서 검증했습니다.
+앞서 Backend를 `127.0.0.1:8080`에서 실행한 후 별도 터미널에서 실행합니다.
+
+```powershell
+npm --prefix frontend ci
+npm run dev
+```
+
+개발 주소는 `http://127.0.0.1:5173`입니다. 개발 API 기본값은 `http://127.0.0.1:8080`,
+production 기본값은 `https://api.furbebe.com`입니다. 변경이 필요할 때만
+`frontend/.env.example`을 `frontend/.env.local`로 복사해 `VITE_API_BASE_URL`을 설정합니다.
+이 값은 공개 build-time 설정이며 production 빌드에는 production API 주소를 지정합니다.
+**루트 `.env`를 frontend로 복사하지 않습니다.** Vite는 frontend 디렉터리의 공개 API 변수 하나만 허용합니다.
+
+```powershell
+npm test
+npm run lint
+npm run build
+npm --prefix frontend run check:worker
+npm run preview
+```
+
+`check:worker`는 `wrangler deploy --dry-run`이며 실제 배포하지 않습니다.
+preview 주소는 `http://127.0.0.1:4173`이며 빌드 시 선택한 API를 사용합니다.
+기본 preview의 Main·목록·상세에는 `https://api.furbebe.com`의 운영 준비가 필요합니다.
+구조는 [Phase 6 보고](docs/phase6-frontend-base.md), 현재 화면·검증·잔여 항목은
+[Phase 7 보고](docs/phase7-discovery.md)를 참조합니다.
+**Phase 8은 사용자 승인 전 시작하지 않습니다.**
+
+## Phase 5 구현
+
+FastAPI → service → repository → SQLAlchemy → psycopg → PostgreSQL로
+동물 목록·상세·비슷한 동물·태그·필터·통계 읽기 API를 제공합니다.
+기존 수집·정규화·UPSERT와 읽기 API를 Supabase DEV PostgreSQL에서 검증했습니다.
+
+## Phase 5 검증 — 2026-09-21
+
+`/health`, `/api/v1/animals`, `/api/v1/animals/{animal_id}`,
+`/api/v1/animals/{animal_id}/similar`, `/api/v1/tags`, `/api/v1/meta/filters`,
+`/api/v1/stats/overview`를 구현했습니다. 모든 도메인 조회는 읽기 전용 transaction입니다.
+
+실제 DEV 동물 **7,290건**을 대상으로 Uvicorn HTTP **37개 검사**를 통과했습니다.
+조회 전후 여섯 도메인 테이블의 데이터 digest가 일치하며 무결성 위반은 0건입니다.
+목록은 1건·24건 모두 SQL 4회로 N+1이 없습니다. 나이·표시 상태·오늘 통계는 Asia/Seoul 기준입니다.
+이번 HTTP 측정에서 목록 24건은 593~705ms, 상세 383~399ms, 비슷한 동물 520~863ms,
+필터 메타 2,093~3,791ms였습니다. 메타 집계가 가장 느리며 부하 시험 결과는 아닙니다.
+
+검증 범위·정책·실행 방법·테스트 결과는 [Phase 5 완료 보고](docs/phase5-read-api.md)에 있습니다.
+전체 테스트 **390 passed / 0 skipped**, Ruff 통과. PostgreSQL 테스트는 별도 로컬 DB에서 실행했습니다.
+후속 [재검토](docs/phase5-review.md)에서 DEV 설정 반영·자정 캐시 결함 2건을 재현했으며 아직 수정하지 않았습니다.
+Phase 5 승인 후 Phase 6 프런트엔드 기반을 구현했습니다. Backend Docker build/run은 미검증입니다.
 
 ## Phase 4B 검증 — 2026-09-16
 
@@ -21,7 +81,7 @@ capture 전체와 DB의 source ID 및 raw payload도 일치합니다. 실행 시
 전체 테스트 **300 passed / 0 skipped**, Ruff 통과. PostgreSQL 통합 테스트는 별도 로컬 테스트 DB에서,
 DEV 최종 검사는 읽기 전용 transaction에서 실행했습니다.
 실행 명령·counter 의미·상세 결과는 [동기화 운영 문서](docs/sync-design.md)에 있습니다.
-Phase 5는 별도 승인 후 진행하며 Docker build/run은 미검증입니다.
+위 수치는 Phase 4B 당시 기록입니다. 현재 읽기 API 검증은 상단 Phase 5 결과를 기준으로 합니다.
 
 ## Phase 4A 검증 기록 — 2026-09-16
 
@@ -34,7 +94,7 @@ CLI 기본 대상은 loopback의 `furbebe_dev*` 또는 `furbebe_test*` DB입니�
 Phase 4B에서 `--database-target supabase-dev`를 명시한 DEV 연결을 추가했습니다.
 위 갱신 315건은 Phase 4A 당시의 집계입니다. 현재 `updated_count`는 내용이 변경된 동물만 세며,
 같은 payload는 `unchanged_count`로 구분합니다. [Phase 4A 결과](docs/phase4a-local-sync.md)는 당시 기록입니다.
-GitHub Actions 스케줄·읽기 API는 후속 범위입니다.
+GitHub Actions 스케줄은 후속 범위이며, 읽기 API는 Phase 5에 구현했습니다.
 
 ## Backend 실행
 
@@ -49,12 +109,34 @@ GitHub Actions 스케줄·읽기 API는 후속 범위입니다.
 연결 성공 시 `{"status":"ok","service":"furbebe-api","version":"1"}`을 반환합니다.
 production은 `APP_ENV=production`, DB URL, 명시적인 HTTPS `FRONTEND_ORIGIN`이 필요합니다.
 
+Phase 4B의 기존 `DATABASE_URL_dev`·`SUPABASE_URL_dev` 설정으로 DEV 읽기 API를 실행하려면
+현재 PowerShell 프로세스에서 대상을 명시합니다. `.env` 변수명을 변경할 필요는 없습니다.
+
+```powershell
+$env:FURBEBE_DATABASE_TARGET = 'supabase-dev'
+try {
+    .\.venv\Scripts\python.exe -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8080
+} finally {
+    Remove-Item Env:FURBEBE_DATABASE_TARGET
+}
+```
+
+개발용 OpenAPI 문서는 `http://127.0.0.1:8080/docs`에서 확인합니다.
+DEV 검증 CLI는 대상을 자체적으로 선택하며 schema·데이터를 변경하지 않습니다.
+
+```powershell
+.\.venv\Scripts\python.exe -m backend.jobs.read_api_verification
+```
+
 ```powershell
 .\.venv\Scripts\python.exe -m alembic -c backend/alembic.ini heads
 .\.venv\Scripts\python.exe -m alembic -c backend/alembic.ini upgrade head --sql
 .\.venv\Scripts\python.exe -m ruff check .
 .\.venv\Scripts\python.exe -m pytest backend/tests -q
 ```
+
+전체 PostgreSQL 통합 테스트는 별도 로컬 disposable DB를 `FURBEBE_TEST_DATABASE_URL`로
+지정해야 합니다. 미지정 시 DB 테스트가 skip됩니다. DEV DB는 테스트 대상으로 사용하지 않습니다.
 
 Phase 3 revision은 `20260915_0001`이며 shelters/animals/animal_images/tags/animal_tags/sync_runs를 생성합니다.
 `upgrade head`는 지정한 PostgreSQL DB에 실제 schema를 적용합니다. 자동 migration은 하지 않습니다.
@@ -75,12 +157,14 @@ Phase 2의 실제 Uvicorn HTTP 요청과 Phase 3의 로컬 PostgreSQL 18.6 schem
 - [Phase 3 DB schema·관계·제약·migration 검증](docs/database-schema.md)
 - [Phase 4A 로컬 sync·재실행·검증 결과](docs/phase4a-local-sync.md)
 - [Phase 4B Supabase DEV migration·동기화 운영](docs/sync-design.md)
+- [Phase 5 읽기 API·실제 DEV 검증·성능](docs/phase5-read-api.md)
 - [아키텍처](docs/architecture.md)
 - [API Contract 사본과 확정 정책](docs/api-contract.md)
 - [제품 정책 확정 기록](docs/phase1-5-product-decisions.md)
 
 체중 A(5/10/20kg), 나이 A(0~1/2~4/5~8/9+), v1 `animals_active` 제외,
-근거 있는 행동·건강 설명의 선택 제공이 확정됐습니다. 동물 정규화는 Phase 4A에 구현했으며 읽기 API는 후속 범위입니다.
+근거 있는 행동·건강 설명의 선택 제공이 확정됐습니다. 동물 정규화는 Phase 4A,
+읽기 API는 Phase 5에 구현했습니다.
 
 ## 현재 결과 — 2026-09-15
 

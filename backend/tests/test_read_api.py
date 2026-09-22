@@ -153,3 +153,28 @@ def test_service_pagination_empty_contract_with_mock_repository():
         "has_next": False,
         "has_previous": False,
     }
+
+
+def test_filter_metadata_adds_official_labels_without_changing_region_codes(client):
+    repository = MagicMock()
+    repository.snapshot.return_value.__enter__.return_value.filter_facets.return_value = [
+        {"organizations": "강원특별자치도 강릉시", "count": 2},
+        {"organizations": "강원특별자치도 고성군", "count": 1},
+        {"organizations": "세종특별자치시", "count": 1},
+        {"organizations": "unmapped organization", "count": 1},
+    ]
+    service = ReadService(repository, today=date(2026, 9, 21))
+    client.app.dependency_overrides[get_read_service] = lambda: service
+    response = client.get("/api/v1/meta/filters")
+    assert response.status_code == 200
+    assert response.json()["regions"] == [{
+        "sido": "5690000",
+        "sigungu": ["5690000"],
+        "sido_label": "세종특별자치시",
+        "sigungu_labels": {"5690000": "세종특별자치시"},
+    }, {
+        "sido": "6530000",
+        "sigungu": ["4201000", "4341000"],
+        "sido_label": "강원특별자치도",
+        "sigungu_labels": {"4201000": "강릉시", "4341000": "고성군"},
+    }]

@@ -1,9 +1,11 @@
-> Repository contract snapshot, 2026-09-15.
+> Repository contract snapshot; implementation status updated 2026-09-21.
 > Latest user decisions: size A (5/10/20kg), age A (0-1/2-4/5-8/9+), omit animals_active in v1.
 > Provide optional source-backed behavior/health descriptions; no inferred traits or diagnoses.
-> Region filters use official codes: sido=upr_cd, sigungu=org_cd. Name examples below are display examples.
+> Region fields use official codes: sido=upr_cd, sigungu=org_cd; names appear in display.
 > Preserve source processState separately; the approved 10-calendar-day notice-start policy controls display.
-> Only /health is implemented in Phase 2. Domain/read endpoints below are contracts for later phases.
+> Phase 5 implements all seven GET endpoints below. Verification and operational policies: [Phase 5 report](phase5-read-api.md).
+> Example counts and animal values below are illustrative, not current DEV observations.
+> Age and display state are calculated using the request's Asia/Seoul date; new_today counts first_seen_at within that KST day.
 
 # FURBEBE FastAPI v1 — 확정 API Contract
 
@@ -132,6 +134,10 @@ sort:
 
 `process_state`는 Phase 1에서 source value를 확인한 후에도 v1에서는 raw display string을 유지한다.
 
+원문 상태는 DB에 보존하고, 응답·필터·메타에는 승인된 표시 정책을 적용한다.
+`보호중`이고 공고 시작일로부터 KST 달력 기준 10일 이상 경과하면 `입양 가능`,
+그 밖에는 원문을 유지한다. 공고 시작일이 없거나 미래이면 `입양 가능`으로 바꾸지 않는다.
+
 즉 source의 새로운 상태값 때문에 API enum이 깨지지 않도록:
 
 ```json
@@ -146,9 +152,9 @@ sort:
 
 공식 분류가 아니라 FURBEBE 내부 탐색 기준이다.
 
-Phase 1 프로파일링 후 변경 가능성은 있으나 v1 release 전에 고정한다.
+Phase 1 프로파일링 후 사용자 승인으로 v1 기준을 확정했다.
 
-초기 제안:
+확정 기준:
 
 ```text
 tiny   : weight_kg <= 5
@@ -168,7 +174,7 @@ Frontend에는 공식 견종 크기 분류라고 표시하지 않는다.
 
 정확한 생일을 모른다는 점을 전제로 한다.
 
-초기 제안:
+확정 기준:
 
 ```text
 puppy  : estimated_age_years <= 1
@@ -178,7 +184,7 @@ senior : estimated_age_years >= 9
 unknown: birth_year null
 ```
 
-`estimated_age_years`는 현재 연도 - birth_year 기준의 대략값.
+`estimated_age_years`는 요청 시 Asia/Seoul 연도 - birth_year 기준의 대략값이며 별도 응답 필드가 아니다.
 
 API Detail에는 원본 `age_text`와 `birth_year`를 함께 제공한다.
 
@@ -290,15 +296,17 @@ Frontend는 `confidence`를 확률이라고 표현하지 않는다.
 
 ```json
 {
-  "sido": "세종특별자치시",
-  "sigungu": null,
+  "sido": "5690000",
+  "sigungu": "5690000",
   "display": "세종특별자치시"
 }
 ```
 
 Fields nullable.
 
-Phase 1에서 region normalizer가 안정적으로 결정되지 않으면:
+`sido`는 공식 `upr_cd`, `sigungu`는 공식 `org_cd`다. 이름은 `display`에 제공한다.
+Phase 5는 기존 공식 참조 자료로 만든 버전 고정 매핑과 source `orgNm`을 대조한다.
+매핑에 없는 지역은 코드를 추정하지 않고:
 
 ```json
 {
@@ -350,8 +358,8 @@ Phase 1에서 region normalizer가 안정적으로 결정되지 않으면:
   "found_date": "2026-09-09",
   "notice_end": "2026-09-21",
   "region": {
-    "sido": "세종특별자치시",
-    "sigungu": null,
+    "sido": "5690000",
+    "sigungu": "5690000",
     "display": "세종특별자치시"
   },
   "primary_image": {
@@ -376,8 +384,7 @@ Phase 1에서 region normalizer가 안정적으로 결정되지 않으면:
       "confidence": 1.0,
       "evidence": "tiny"
     }
-  ],
-  "is_favorite": null
+  ]
 }
 ```
 
@@ -385,7 +392,7 @@ Phase 1에서 region normalizer가 안정적으로 결정되지 않으면:
 
 1차 favorite는 localStorage이므로 Backend는 favorite를 모른다.
 
-따라서 v1 response에서는 기본적으로 필드 자체를 **제외하는 것을 권장**한다.
+따라서 v1 response에서 필드 자체를 **제외한다**.
 
 Frontend에서 localStorage와 merge한다.
 
@@ -451,10 +458,10 @@ page_size
   max 60
 
 sido
-  string|null
+  string|null, official upr_cd
 
 sigungu
-  string|null
+  string|null, official org_cd
 
 breed
   string|null
@@ -518,7 +525,7 @@ id
 ## Request example
 
 ```http
-GET /api/v1/animals?page=1&page_size=24&sido=세종특별자치시&size_group=tiny&tag=puppy&sort=recent
+GET /api/v1/animals?page=1&page_size=24&sido=5690000&size_group=tiny&tag=puppy&sort=recent
 ```
 
 GET body 없음.
@@ -547,8 +554,8 @@ GET body 없음.
       "found_date": "2026-09-09",
       "notice_end": "2026-09-21",
       "region": {
-        "sido": "세종특별자치시",
-        "sigungu": null,
+        "sido": "5690000",
+        "sigungu": "5690000",
         "display": "세종특별자치시"
       },
       "primary_image": {
@@ -585,7 +592,7 @@ GET body 없음.
     "has_previous": false
   },
   "applied_filters": {
-    "sido": "세종특별자치시",
+    "sido": "5690000",
     "sigungu": null,
     "breed": null,
     "sex": null,
@@ -706,8 +713,8 @@ Not found:
     "date": "2026-09-09",
     "place": "세종시 대평동 698",
     "region": {
-      "sido": "세종특별자치시",
-      "sigungu": null,
+      "sido": "5690000",
+      "sigungu": "5690000",
       "display": "세종특별자치시"
     }
   },
@@ -826,8 +833,8 @@ limit
       "found_date": "2026-09-09",
       "notice_end": "2026-09-21",
       "region": {
-        "sido": "세종특별자치시",
-        "sigungu": null,
+        "sido": "5690000",
+        "sigungu": "5690000",
         "display": "세종특별자치시"
       },
       "primary_image": {
@@ -906,12 +913,12 @@ Frontend filter option의 source of truth.
 {
   "regions": [
     {
-      "sido": "세종특별자치시",
-      "sigungu": []
+      "sido": "5690000",
+      "sigungu": ["5690000"]
     },
     {
-      "sido": "경상남도",
-      "sigungu": ["창원시", "합천군", "창녕군"]
+      "sido": "6480000",
+      "sigungu": ["5410000", "5480000", "5670000"]
     }
   ],
   "breeds": [
@@ -998,7 +1005,26 @@ Frontend filter option의 source of truth.
 }
 ```
 
-`process_states`는 DB에서 실제 관찰값 기반.
+`process_states`는 DB에서 실제 관찰한 상태에 승인된 KST 표시 정책을 적용해 집계한다.
+`regions`의 `sido`·`sigungu`도 공식 코드이며 목록 필터 요청에 그대로 사용할 수 있다.
+품종과 옵션은 실제 데이터에 존재하는 값만 반환한다.
+
+Phase 7에서는 지역별 `sido_label`(문자열 또는 null)과 `sigungu_labels`(코드 → 이름 object)를
+추가했다. 기존 `sido`·`sigungu`의 값과 자료형은 유지한다. 새 이름 필드는 backend의 기존 공식
+지역 매핑에서 가져오며, frontend에서 지역 전체 목록을 별도로 관리하지 않는다.
+세종처럼 시군구 코드가 시도와 같고 별도 시군구 이름이 없는 경우 시도 이름을 표시한다.
+
+```json
+{
+  "sido": "5690000",
+  "sigungu": ["5690000"],
+  "sido_label": "세종특별자치시",
+  "sigungu_labels": { "5690000": "세종특별자치시" }
+}
+```
+
+UI에는 label을 표시하고 요청 URL에는 code를 전달한다. 위 값은 응답 모양을 설명하는 예시이며
+frontend에 하드코딩할 목록이 아니다. `/dogs`는 사용자 결정에 따라 이 API의 전체 구조동물을 표시한다.
 
 ---
 
@@ -1021,6 +1047,10 @@ Confirmed 2026-09-15: animals_active is omitted from the v1 response.
 Recorded protecting-state counts do not establish current adoption availability.
 Other response fields retain the original contract.
 
+`new_today`는 요청 시 Asia/Seoul 오늘 00:00 이상, 다음 날 00:00 미만의 `first_seen_at` 수다.
+`last_synced_at`는 `status=success`인 sync_runs의 최신 `finished_at`이며 없으면 null이다.
+`with_primary_image`는 API가 지원하는 source/adoption 이미지가 하나 이상 있는 동물 수다.
+
 ---
 
 # 19. Cache policy
@@ -1037,6 +1067,7 @@ GET /stats/overview          public, max-age=60
 ```
 
 실제 Cloudflare caching은 별도 deployment 설정에서 적용 가능.
+Phase 5는 날짜 파생값이 오래 남지 않도록 위 TTL을 KST 다음 자정까지의 초 이내로 제한한다.
 
 개인정보가 생기는 2차 API에는 이 정책을 자동 적용하지 않는다.
 
