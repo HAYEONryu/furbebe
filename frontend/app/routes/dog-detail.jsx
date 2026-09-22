@@ -10,8 +10,8 @@ import { birthLabel, factLabel, getAnimalDetailPage, hasText, shelterPhoneHref, 
 import { loadRoute } from '../services/route-loader.js';
 export { RouteError as ErrorBoundary } from '../components/route-error.jsx';
 
-export function meta({ data } = {}) {
-  return [{ title: data?.seo.title ?? '아이의 소식 · FURBEBE' }, ...(data?.seo ? [{ name: 'description', content: data.seo.description }] : [])];
+export function meta({ loaderData } = {}) {
+  return [{ title: loaderData?.seo.title ?? '아이의 소식 · FURBEBE' }, ...(loaderData?.seo ? [{ name: 'description', content: loaderData.seo.description }] : [])];
 }
 export function loader({ params, request }) {
   return loadRoute(() => getAnimalDetailPage(params.animalId, { signal: request.signal }));
@@ -40,7 +40,7 @@ function AdoptionPromotion({ promotion }) {
     <p className="detail-source-note">등록된 홍보 내용과 기간을 확인해 주세요.</p>
     {rows.length > 0 && <Facts rows={rows} />}
     {hasText(promotion.description) && <p className="source-paragraph">{promotion.description}</p>}
-    {hasText(promotion.image_url) && <div className="promotion-image"><AnimalImage src={promotion.image_url} alt={hasText(promotion.title) ? `${promotion.title} 홍보 이미지` : '보호소에 등록된 입양 홍보 이미지'} /></div>}
+    {hasText(promotion.image_url) && <div className="promotion-image"><AnimalImage src={promotion.image_url} alt={hasText(promotion.title) ? `${promotion.title} 홍보 이미지` : '보호소에 등록된 입양 홍보 이미지'} fit="contain" natural /></div>}
   </section>;
 }
 

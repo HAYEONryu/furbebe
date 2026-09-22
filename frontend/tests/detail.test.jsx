@@ -51,7 +51,7 @@ it('loads detail and similar?limit=4 only, with factual summary, shelter and met
   expect(facts.getByText('4.5kg')).toBeVisible();
   expect(facts.getByText('5kg 이하')).toBeVisible();
   expect(screen.getByRole('link', { name: '테스트 보호소에 전화로 문의하기' })).toHaveAttribute('href', 'tel:0212345678');
-  const metadata = meta({ data: { seo: detailSeo(detail) } });
+  const metadata = meta({ loaderData: { seo: detailSeo(detail) } });
   expect(metadata[0].title).toBe('테스트 품종 · 테스트 지역 · FURBEBE');
   expect(metadata[1].content).toContain('보호중');
   expect(metadata[1].content).not.toMatch(/건강|긴급|확률|기다리/);
@@ -87,6 +87,14 @@ it('replaces a broken photo with a fallback and recovers when another photo is s
   expect(screen.getByRole('img', { name: '사진을 불러올 수 없어요.' })).toBeVisible();
   await userEvent.setup().click(screen.getByRole('button', { name: '사진 2 보기' }));
   expect(screen.getByRole('img', { name: '테스트 품종의 보호소 등록 사진 2' })).toBeVisible();
+});
+
+it('keeps a valid photo visible when revalidation removes the selected secondary image', async () => {
+  const { rerender } = render(<ImageGallery name="테스트 품종" images={photos} />);
+  await userEvent.setup().click(screen.getByRole('button', { name: '사진 2 보기' }));
+  rerender(<ImageGallery name="테스트 품종" images={[photos[1]]} />);
+  expect(screen.getByRole('img', { name: '테스트 품종의 보호소 등록 사진 1' })).toHaveAttribute('src', photos[1].url);
+  expect(screen.getByRole('status')).toHaveTextContent('1 / 1');
 });
 
 it('renders all six source descriptions as plain text without making health claims', async () => {

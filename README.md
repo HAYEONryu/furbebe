@@ -1,10 +1,11 @@
-# FURBEBE — Phase 7 Main + Dogs Listing
+# FURBEBE — Phase 8 Dog Detail
 
 React Router Framework + React + Vite + JavaScript/JSX + Tailwind 기반의 프런트엔드를
 `frontend/`에 구현했습니다. Cloudflare Workers SSR loader가 FastAPI v1을 호출하며,
 데이터 경계는 React → FastAPI → PostgreSQL입니다.
 `/`는 실제 API 사진을 사용하는 Hero·Quick Discovery·최근 등록 동물을,
-`/dogs`는 검색·필터·정렬·페이지·관심 저장을 제공합니다. `/dogs/:animalId`는 Phase 6의 기본 상세 화면입니다.
+`/dogs`는 검색·필터·정렬·페이지·관심 저장을 제공합니다. `/dogs/:animalId`는 실제 사진 갤러리,
+기본·발견 정보, 원문 설명, 보호소 연락, 조건부 홍보 정보, 관심 저장·공유와 유사 동물을 제공합니다.
 사용자 선택에 따라 개·고양이·기타 구조동물을 함께 표시합니다.
 필터·정렬·페이지는 URL에 보존하며, 품종·지역·상태·그룹 옵션은 FastAPI 메타를 사용합니다.
 지역명을 표시하기 위해 기존 지역 코드 응답에 `sido_label`·`sigungu_labels`를 호환 확장했습니다.
@@ -36,9 +37,10 @@ npm run preview
 `check:worker`는 `wrangler deploy --dry-run`이며 실제 배포하지 않습니다.
 preview 주소는 `http://127.0.0.1:4173`이며 빌드 시 선택한 API를 사용합니다.
 기본 preview의 Main·목록·상세에는 `https://api.furbebe.com`의 운영 준비가 필요합니다.
-구조는 [Phase 6 보고](docs/phase6-frontend-base.md), 현재 화면·검증·잔여 항목은
-[Phase 7 보고](docs/phase7-discovery.md)를 참조합니다.
-**Phase 8은 사용자 승인 전 시작하지 않습니다.**
+구조는 [Phase 6 보고](docs/phase6-frontend-base.md), Main·목록은 [Phase 7 보고](docs/phase7-discovery.md),
+상세 화면·검증·잔여 항목은 [Phase 8 보고](docs/phase8-detail.md)를 참조합니다.
+상세 화면은 detail와 `similar?limit=4` 두 API만 사용합니다. 설명·행동·건강 정보는 원문이 있을 때만 표시합니다.
+**Phase 8.5 / 9는 사용자 승인 전 시작하지 않습니다.**
 
 ## Phase 5 구현
 
