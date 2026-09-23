@@ -43,8 +43,22 @@ export function discoveryHref(state = {}) {
 }
 
 export function discoveryTags(tags) {
-  return tags.filter((tag) => ['vibe', 'fact'].includes(tag.type))
-    .toSorted((a, b) => Number(b.type === 'vibe') - Number(a.type === 'vibe'));
+  return tags.filter((tag) => ['trait', 'vibe', 'fact'].includes(tag.type))
+    .toSorted((a, b) => Number(b.type === 'trait') - Number(a.type === 'trait') ||
+      Number(b.type === 'vibe') - Number(a.type === 'vibe'));
+}
+
+export function cardTags(tags) {
+  const unique = [...new Map(tags.map((tag) => [tag.key, tag])).values()];
+  if (!unique.some((tag) => tag.category)) return discoveryTags(unique).slice(0, 3);
+  const personality = unique.filter((tag) => tag.category === 'personality');
+  const relationship = unique.filter((tag) => tag.category === 'relationship');
+  // Give a relationship tag room when several personality tags are present.
+  const character = personality.length && relationship.length
+    ? [personality[0], relationship[0]] : [...personality, ...relationship].slice(0, 2);
+  const appearance = unique.find((tag) => tag.category === 'appearance_color') ??
+    unique.find((tag) => tag.category === 'size');
+  return [...character, ...(appearance ? [appearance] : [])];
 }
 
 export function regionOptions(meta, sido) {

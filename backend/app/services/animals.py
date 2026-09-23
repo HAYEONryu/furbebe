@@ -26,6 +26,7 @@ from backend.app.services.regions import matching_organizations, region_for
 from backend.jobs.animal_sync.normalizer import nullable_text
 from backend.jobs.animal_sync.parsing import parse_date, valid_url
 from backend.jobs.animal_sync.status_policy import korea_today
+from backend.jobs.animal_sync.tagger import CATEGORIES, generate_safety_badges
 
 LABELS = {
     "sexes": {"male": "수컷", "female": "암컷", "unknown": "미상"},
@@ -64,7 +65,8 @@ def summary(row):
         process_state=row["process_state"],
         region=region_response(row["organization"]),
         primary_image=row["images"][0] if row["images"] else None,
-        tags=row["tags"],
+        tags=[dict(tag, category=CATEGORIES.get(tag["key"])) for tag in row["tags"]],
+        safety_badges=generate_safety_badges(row),
     )
 
 
@@ -166,7 +168,8 @@ class ReadService:
                 "region": region_response(row["organization"]),
             },
             images=row["images"],
-            tags=row["tags"],
+            tags=[dict(tag, category=CATEGORIES.get(tag["key"])) for tag in row["tags"]],
+            safety_badges=generate_safety_badges(row),
             descriptions={
                 "special_mark": row["special_mark"],
                 "social": row["social_text"],
@@ -204,7 +207,9 @@ class ReadService:
     def tags(self, *, type, active_only):
         with self.snapshot() as queries:
             rows = queries.tag_catalog(type=type, active_only=active_only)
-        return TagListResponse(items=[dict(row) for row in rows])
+        return TagListResponse(
+            items=[dict(row, category=CATEGORIES.get(row["key"])) for row in rows]
+        )
 
     def meta(self):
         with self.snapshot() as queries:

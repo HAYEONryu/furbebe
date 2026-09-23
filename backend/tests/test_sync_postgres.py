@@ -5,13 +5,14 @@ from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
 import pytest
-from sqlalchemy import func, insert, select, text
+from sqlalchemy import func, insert, select, text, update
 from sqlalchemy.schema import CreateSchema, DropSchema
 
 from backend.app.db.models import Animal, AnimalImage, AnimalTag, Base, Shelter, SyncRun, Tag
 from backend.app.db.session import create_database_engine
 from backend.jobs.animal_sync.client import ApiFailure
 from backend.jobs.animal_sync.repositories import SyncRepository
+from backend.jobs.animal_sync.retag import retag
 from backend.jobs.animal_sync.service import LOCK_NAMESPACE, LOCK_SOURCE, sync
 from backend.tests.sync_fixtures import SnapshotClient, source_row
 
@@ -62,8 +63,8 @@ def test_initial_insert_repeat_and_durable_counters(sync_engine):
         "animals": 5,
         "shelters": 1,
         "animal_images": 10,
-        "tags": 17,
-        "animal_tags": 30,
+        "tags": 27,
+        "animal_tags": 10,
     }
     second = run(sync_engine, rows, page_size=2)
     assert second.status == "success"
@@ -78,6 +79,22 @@ def test_initial_insert_repeat_and_durable_counters(sync_engine):
     assert record["status"] == "success" and record["finished_at"] is not None
     assert record["page_count"] == 4 and record["received_count"] == 5
     assert record["inserted_count"] == 0 and record["updated_count"] == 0
+
+
+def test_expanded_catalog_refreshes_order_and_keeps_disabled_tags(sync_engine):
+    row = source_row(specialMark="애교 많음. 발라당. 무릎강아지. 복슬복슬")
+    assert run(sync_engine, [row]).status == "success"
+    with sync_engine.begin() as connection:
+        # An earlier v2 catalog placed body size before the newly added fluffy tag.
+        connection.execute(update(Tag).where(Tag.key == "cuddly").values(display_order=21))
+        connection.execute(update(Tag).where(Tag.key == "lap_dog").values(is_active=False))
+    assert run(sync_engine, [row]).status == "success"
+    with sync_engine.connect() as connection:
+        order = dict(connection.execute(select(Tag.key, Tag.display_order)).all())
+        keys = set(connection.scalars(select(AnimalTag.tag_key)))
+        assert connection.scalar(select(Tag.is_active).where(Tag.key == "lap_dog")) is False
+    assert order["fluffy"] < order["cuddly"]
+    assert keys == {"fluffy", "white_coat", "cuddly"}
 
 
 def test_controlled_update_reconciles_images_tags_and_preserves_identity(sync_engine):
@@ -163,7 +180,7 @@ def test_controlled_update_reconciles_images_tags_and_preserves_identity(sync_en
     retained = next(image for image in images if image["image_url"] == row["popfile2"])
     original = next(image for image in old_images if image["image_url"] == row["popfile2"])
     assert retained["id"] == original["id"] and retained["sort_order"] == 1
-    assert tags == {"medium", "senior", "cream", "cheese", "senior_dog", "human_fixture"}
+    assert tags == {"sturdy", "cream_coat", "human_fixture"}
     assert counts(sync_engine)["animals"] == 2
 
 
@@ -262,7 +279,7 @@ def test_serialization_failure_retries_whole_batch_without_duplicates(sync_engin
     assert (
         result.status == "success" and result.database_retries == 1 and result.inserted_count == 1
     )
-    assert counts(sync_engine)["animal_tags"] == 6
+    assert counts(sync_engine)["animal_tags"] == 2
 
 
 @pytest.mark.parametrize(
@@ -321,7 +338,7 @@ def test_older_aware_source_cannot_replace_newer_snapshot(sync_engine):
     assert counts(sync_engine)["animal_images"] == 2
 
 
-def test_age_tag_refreshes_with_year_without_stored_age_group(sync_engine):
+def test_year_rollover_does_not_create_age_tags(sync_engine):
     row = source_row()
     assert run(sync_engine, [row]).status == "success"
     result = sync(sync_engine, SnapshotClient([row]), clock=lambda: NOW.replace(year=2027))
@@ -329,7 +346,76 @@ def test_age_tag_refreshes_with_year_without_stored_age_group(sync_engine):
     assert result.updated_count == 0 and result.unchanged_count == 1
     with sync_engine.connect() as connection:
         tags = set(connection.scalars(select(AnimalTag.tag_key)))
-    assert "young" in tags and "puppy" not in tags and "baby_dog" not in tags
+    assert tags == {"white_coat", "cuddly"}
+
+
+def test_retag_preserves_v1_facts_animals_manual_tags_and_idempotence(sync_engine):
+    assert run(sync_engine, [source_row(specialMark="사람을 좋아함. 방어적 입질")]).status == "success"
+    with sync_engine.begin() as connection:
+        before = connection.execute(select(Animal.__table__)).mappings().one()
+        connection.execute(insert(Tag).values(key="puppy", type="fact", label="추정 1세 이하"))
+        connection.execute(insert(AnimalTag), [
+            dict(id=uuid4(), animal_id=before["id"], tag_key="puppy", confidence=1,
+                 generator="rules", generator_version="1.0", evidence="old age"),
+            dict(id=uuid4(), animal_id=before["id"], tag_key="gentle", confidence=1,
+                 generator="manual", generator_version="1", evidence="manual observation"),
+        ])
+    original_counts = counts(sync_engine)
+    preview = retag(sync_engine, dry_run=True, batch_size=1)
+    assert preview["animals"] == 1 and preview["safety"] == {"bite_caution": 1}
+    assert counts(sync_engine) == original_counts
+    result = retag(sync_engine, batch_size=1)
+    assert result["assignments"] == 3
+    with sync_engine.connect() as connection:
+        assert dict(connection.execute(select(Animal.__table__)).mappings().one()) == dict(before)
+        assignments = connection.execute(select(AnimalTag.__table__)).mappings().all()
+        assert any(row["generator"] == "manual" and row["evidence"] == "manual observation" for row in assignments)
+        assert any(row["tag_key"] == "puppy" for row in assignments)
+        assert connection.scalar(select(Tag.is_active).where(Tag.key == "puppy")) is True
+    assert retag(sync_engine) == result
+    with sync_engine.connect() as connection:
+        repeated = connection.execute(select(AnimalTag.__table__)).mappings().all()
+    assert {row["id"] for row in repeated} == {row["id"] for row in assignments}
+    # A disabled v2 tag remains disabled and its automatic assignment is removed.
+    with sync_engine.begin() as connection:
+        connection.execute(update(Tag).where(Tag.key == "people_friendly").values(is_active=False))
+    assert "people_friendly" not in retag(sync_engine, dry_run=True)["tags"]
+    retag(sync_engine)
+    with sync_engine.connect() as connection:
+        assert "people_friendly" not in set(connection.scalars(select(AnimalTag.tag_key)))
+
+
+def test_retag_lock_and_atomic_rollback(sync_engine, monkeypatch):
+    assert run(sync_engine, [source_row("a"), source_row("b")]).status == "success"
+    with sync_engine.connect() as lock:
+        lock.execute(text("SELECT pg_advisory_lock(:namespace, :source)"),
+                     {"namespace": LOCK_NAMESPACE, "source": LOCK_SOURCE})
+        lock.commit()
+        try:
+            with pytest.raises(ApiFailure, match="SYNC_ALREADY_RUNNING"):
+                retag(sync_engine)
+        finally:
+            lock.execute(text("SELECT pg_advisory_unlock(:namespace, :source)"),
+                         {"namespace": LOCK_NAMESPACE, "source": LOCK_SOURCE})
+            lock.commit()
+    with sync_engine.begin() as connection:
+        connection.execute(update(Animal).values(special_mark="온순함"))
+        before = set(connection.execute(select(AnimalTag.id, AnimalTag.tag_key)))
+    original = SyncRepository.reconcile_tags
+    calls = 0
+
+    def fail_second(self, *args, **kwargs):
+        nonlocal calls
+        calls += 1
+        if calls == 2:
+            raise ApiFailure("TEST_ROLLBACK")
+        return original(self, *args, **kwargs)
+
+    monkeypatch.setattr(SyncRepository, "reconcile_tags", fail_second)
+    with pytest.raises(ApiFailure, match="TEST_ROLLBACK"):
+        retag(sync_engine, batch_size=1)
+    with sync_engine.connect() as connection:
+        assert set(connection.execute(select(AnimalTag.id, AnimalTag.tag_key))) == before
 
 
 def test_identical_snapshot_only_refreshes_observation_timestamp(sync_engine):

@@ -15,6 +15,7 @@ from backend.app.db.session import create_database_engine, get_database
 from backend.app.main import create_app
 from backend.app.repositories.animals import ReadRepository
 from backend.app.services.animals import read_today
+from backend.jobs.animal_sync.retag import retag
 from backend.tests.read_fixtures import NOW, SENTINEL, TODAY, seed
 
 pytestmark = pytest.mark.postgres
@@ -59,6 +60,30 @@ def detail(env, number):
     return response.json()
 
 
+def test_v3_traits_v2_vibes_and_safety_survive_database_and_api(env):
+    with env.engine.begin() as connection:
+        connection.execute(update(Animal).where(Animal.id == UUID(int=1)).values(
+            special_mark="온순. 사람을 좋아함. 방어적 입질.",
+            color_text="흰색&회색", weight_kg=5, health_text="건강상태 양호",
+        ))
+    retag(env.engine)
+    data = detail(env, 1)
+    assert {tag["label"] for tag in data["tags"] if tag["category"]} == {
+        "순딩이", "사람좋아", "품에쏙",
+    }
+    assert data["safety_badges"] == [{
+        "key": "bite_caution", "label": "입질주의", "evidence": "special_mark: 방어적 입질",
+    }]
+    assert data["descriptions"]["health"] == "건강상태 양호"
+    items = listing(env, tag="people_friendly")["items"]
+    assert len(items) == 1
+    assert items[0]["tags"] == data["tags"]
+    assert items[0]["safety_badges"] == data["safety_badges"]
+    catalog = env.client.get("/api/v1/tags").json()["items"]
+    assert any(tag["key"] == "people_friendly" and tag["category"] == "relationship" for tag in catalog)
+    assert any(tag["key"] == "puppy" for tag in catalog)
+
+
 def test_defaults_exact_summary_contract_and_nulls(env):
     data = listing(env)
     assert len(data["items"]) == 24
@@ -89,6 +114,7 @@ def test_defaults_exact_summary_contract_and_nulls(env):
         "region",
         "primary_image",
         "tags",
+        "safety_badges",
     }
     first = detail(env, 1)
     assert first["animal"]["weight_kg"] == 0 and first["animal"]["size_group"] == "tiny"
@@ -229,6 +255,7 @@ def test_detail_shape_promotion_and_only_source_descriptions(env):
         "found",
         "images",
         "tags",
+        "safety_badges",
         "descriptions",
         "shelter",
         "adoption_promotion",

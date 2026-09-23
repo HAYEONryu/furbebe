@@ -39,6 +39,24 @@ function route(path = `/dogs/${ID}`) {
 }
 async function ready() { return screen.findByRole('heading', { level: 1, name: '테스트 품종' }); }
 
+it('shows every character tag and independent safety badges while preserving the health source', async () => {
+  const allTags = [
+    ['gentle', '순딩이', 'personality'], ['playful', '똥꼬발랄', 'personality'],
+    ['people_friendly', '사람좋아', 'relationship'], ['brownie', '브라우니', 'appearance_color'],
+    ['curly', '곱슬몽실', 'appearance_extra'], ['cuddly', '품에쏙', 'size'],
+  ].map(([key, label, category]) => ({ key, label, category, type: 'vibe' }));
+  serve({ animal: { ...detail, tags: allTags,
+    safety_badges: [{ key: 'bite_caution', label: '입질주의', evidence: '방어적 입질' }],
+    descriptions: { ...detail.descriptions, health: '피부질환 치료 중' },
+  } });
+  route(); await ready();
+  for (const tag of allTags) expect(screen.getByText(tag.label)).toBeVisible();
+  expect(within(screen.getByRole('list', { name: '안전 정보' })).getByText('입질주의')).toBeVisible();
+  expect(screen.getByText('피부질환 치료 중')).toBeVisible();
+  expect(screen.queryByText('케어필요')).not.toBeInTheDocument();
+  expect(screen.queryByText('건강양호')).not.toBeInTheDocument();
+});
+
 it('loads detail and similar?limit=4 only, with factual summary, shelter and metadata', async () => {
   const fetch = serve();
   route();

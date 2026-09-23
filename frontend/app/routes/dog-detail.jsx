@@ -6,6 +6,7 @@ import { FavoriteButton } from '../components/favorite-button.jsx';
 import { ImageGallery } from '../components/image-gallery.jsx';
 import { ShareButton } from '../components/share-button.jsx';
 import { TagChip } from '../components/tag-chip.jsx';
+import { SafetyBadges } from '../components/safety-badges.jsx';
 import { birthLabel, factLabel, getAnimalDetailPage, hasText, shelterPhoneHref, textOrUnknown, weightLabel } from '../services/animal-detail.js';
 import { loadRoute } from '../services/route-loader.js';
 export { RouteError as ErrorBoundary } from '../components/route-error.jsx';
@@ -74,6 +75,7 @@ function DetailContent({ data }) {
           <ul>{detail.tags.map((tag) => <li key={tag.key}><TagChip label={tag.label} emoji={tag.emoji} type={tag.type} /></li>)}</ul>
           {detail.tags.some((tag) => hasText(tag.evidence)) && <details className="tag-evidence"><summary>태그에 담긴 등록 정보</summary><dl>{detail.tags.filter((tag) => hasText(tag.evidence)).map((tag) => <div key={tag.key}><dt>{tag.label}</dt><dd>{tag.evidence}</dd></div>)}</dl></details>}
         </section>}
+        <SafetyBadges badges={detail.safety_badges} />
         <a href="#shelter-info" className="text-link">보호소 정보 살펴보기 <span aria-hidden="true">↓</span></a>
       </header>
     </div>

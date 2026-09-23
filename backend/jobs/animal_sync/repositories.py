@@ -1,6 +1,7 @@
 """PostgreSQL bulk writes; transaction ownership belongs to the sync service."""
 
-from dataclasses import dataclass
+from collections import Counter
+from dataclasses import asdict, dataclass
 from datetime import datetime
 from uuid import uuid4
 
@@ -12,6 +13,9 @@ from backend.app.db.models import Animal, AnimalImage, AnimalTag, Shelter, SyncR
 from .client import ApiFailure
 from .normalizer import SOURCE
 from .tagger import CATALOG, GENERATOR, OWNED_KEYS, VERSION, generate_tags
+from .tagger.behavior import RELEASED_RULE_IDS, generate_behavior_tags
+from .tagger.behavior import VERSION as BEHAVIOR_VERSION
+from .tagger.catalog import TRAIT_CATALOG, TRAIT_KEYS, VIBE_KEYS
 
 
 @dataclass(frozen=True)
@@ -26,6 +30,88 @@ def chunks(rows, size=1000):
     # Child rows can exceed the PostgreSQL bind parameter limit even for 500 animals.
     for offset in range(0, len(rows), size):
         yield rows[offset : offset + size]
+
+
+REPLACED_VERSIONS = ("1.0", "2.0", BEHAVIOR_VERSION)
+
+
+def owned_assignments():
+    return and_(
+        AnimalTag.generator == GENERATOR,
+        AnimalTag.generator_version.in_(REPLACED_VERSIONS),
+        AnimalTag.tag_key.in_(TRAIT_KEYS),
+        AnimalTag.tag_key.in_(select(Tag.key).where(Tag.type == "trait")),
+        AnimalTag.animal_id.in_(select(Animal.id).where(Animal.source == SOURCE)),
+    )
+
+
+def reconcile_behavior(connection, rows, *, rule_ids):
+    """Caller owns transaction/lock. Touch only known automatic TRAIT assignments."""
+    matches = [
+        (row["id"], tag) for row in rows for tag in generate_behavior_tags(row, rule_ids=rule_ids)
+    ]
+    wanted_keys = {tag.tag_key for _, tag in matches}
+    existing_types = dict(
+        connection.execute(
+            select(Tag.key, Tag.type).where(Tag.key.in_(TRAIT_KEYS)),
+        ).all()
+    )
+    if any(kind != "trait" for kind in existing_types.values()):
+        raise ApiFailure("BEHAVIOR_CATALOG_TYPE_CONFLICT")
+    additions = [row for row in TRAIT_CATALOG if row["key"] in wanted_keys]
+    if additions:
+        # Never change is_active, display metadata, or any FACT/VIBE catalog row.
+        connection.execute(
+            insert(Tag).values(additions).on_conflict_do_nothing(index_elements=[Tag.key])
+        )
+    active = set(
+        connection.scalars(
+            select(Tag.key).where(
+                Tag.type == "trait",
+                Tag.key.in_(TRAIT_KEYS),
+                Tag.is_active.is_(True),
+            )
+        )
+    )
+    desired = []
+    for animal_id, tag in matches:
+        if tag.tag_key not in active:
+            continue
+        if not all((tag.evidence.strip(), tag.rule_id, tag.generator, tag.generator_version)):
+            raise ApiFailure("BEHAVIOR_EVIDENCE_REQUIRED")
+        desired.append({"id": uuid4(), "animal_id": animal_id, **asdict(tag)})
+    wanted = {(row["animal_id"], row["tag_key"]) for row in desired}
+    old = connection.execute(
+        select(
+            AnimalTag.id,
+            AnimalTag.animal_id,
+            AnimalTag.tag_key,
+            AnimalTag.generator_version,
+        ).where(owned_assignments(), AnimalTag.animal_id.in_([row["id"] for row in rows]))
+    ).all()
+    obsolete = [
+        row.id
+        for row in old
+        if row.generator_version != BEHAVIOR_VERSION or (row.animal_id, row.tag_key) not in wanted
+    ]
+    for block in chunks(obsolete):
+        connection.execute(delete(AnimalTag).where(AnimalTag.id.in_(block)))
+    for block in chunks(desired):
+        statement = insert(AnimalTag).values(block)
+        connection.execute(
+            statement.on_conflict_do_update(
+                index_elements=[
+                    AnimalTag.animal_id,
+                    AnimalTag.tag_key,
+                    AnimalTag.generator,
+                    AnimalTag.generator_version,
+                ],
+                set_={
+                    name: statement.excluded[name] for name in ("evidence", "rule_id", "confidence")
+                },
+            )
+        )
+    return Counter(row["tag_key"] for row in desired)
 
 
 class SyncRepository:
@@ -55,7 +141,19 @@ class SyncRepository:
         ).one()
 
     def catalog(self):
-        statement = insert(Tag).values(CATALOG).on_conflict_do_nothing(index_elements=[Tag.key])
+        # Existing v1 FACT/VIBE entries remain active; TRAIT migration has no
+        # authority to retire them or remove their assignments.
+        statement = insert(Tag).values(CATALOG)
+        statement = statement.on_conflict_do_update(
+            index_elements=[Tag.key],
+            set_={
+                name: statement.excluded[name]
+                for name in ("label", "emoji", "description", "display_order")
+            },
+            # Refresh owned metadata when the catalog grows; preserve disabled tags
+            # and let the type-conflict check below reject incompatible definitions.
+            where=Tag.type == statement.excluded.type,
+        )
         self.connection.execute(statement)
         existing = self.connection.execute(
             select(Tag.key, Tag.type, Tag.is_active).where(Tag.key.in_(OWNED_KEYS))
@@ -233,19 +331,19 @@ class SyncRepository:
                 confidence=tag.confidence,
                 evidence=tag.evidence,
                 rule_id=tag.rule_id,
-                generator=GENERATOR,
-                generator_version=VERSION,
+                generator=tag.generator,
+                generator_version=tag.generator_version,
             )
             for animal in animals
             for tag in generate_tags(animal, today=today)
-            if tag.tag_key in active
+            if tag.tag_key in active and tag.tag_key in VIBE_KEYS
         ]
         wanted = {(row["animal_id"], row["tag_key"]) for row in rows}
         ownership = and_(
             AnimalTag.animal_id.in_(list(ids.values())),
             AnimalTag.generator == GENERATOR,
             AnimalTag.generator_version == VERSION,
-            AnimalTag.tag_key.in_(OWNED_KEYS),
+            AnimalTag.tag_key.in_(VIBE_KEYS),
         )
         existing = self.connection.execute(
             select(AnimalTag.id, AnimalTag.animal_id, AnimalTag.tag_key).where(ownership)
@@ -269,3 +367,8 @@ class SyncRepository:
                     },
                 )
             )
+        reconcile_behavior(
+            self.connection,
+            [{**animal.values, "id": ids[animal.values["source_id"]]} for animal in animals],
+            rule_ids=RELEASED_RULE_IDS,
+        )

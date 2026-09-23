@@ -2,11 +2,12 @@ import { Link } from 'react-router';
 import { AnimalImage } from './animal-image.jsx';
 import { FavoriteButton } from './favorite-button.jsx';
 import { TagChip } from './tag-chip.jsx';
-import { discoveryTags } from '../services/discovery-query.js';
+import { cardTags } from '../services/discovery-query.js';
+import { SafetyBadges } from './safety-badges.jsx';
 
 export function AnimalCard({ animal }) {
   const name = animal.breed || '품종 정보 없음';
-  const tags = discoveryTags(animal.tags).slice(0, 3);
+  const tags = cardTags(animal.tags);
   const age = animal.birth_year != null ? `${animal.birth_year}년생` : animal.age_text || '나이 미상';
   const weight = animal.weight_kg != null ? `${animal.weight_kg.toLocaleString('ko-KR')}kg` : '체중 미상';
   return <article className="animal-card">
@@ -19,6 +20,7 @@ export function AnimalCard({ animal }) {
         {tags.length > 0 && <ul aria-label="대표 태그" className="mt-3 flex flex-wrap gap-1.5">
           {tags.map((tag) => <li key={tag.key}><TagChip label={tag.label} emoji={tag.emoji} type={tag.type} /></li>)}
         </ul>}
+        <SafetyBadges badges={animal.safety_badges} />
       </div>
     </Link>
     <FavoriteButton animalId={animal.id} name={name} compact />

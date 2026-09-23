@@ -26,6 +26,29 @@ it('renders source facts and prioritizes VIBE with no more than three tags', () 
   expect(chips[0]).toHaveTextContent('콩만이');
 });
 
+it('shows two character tags and one color, with safety badges outside the tag limit', () => {
+  const make = (key, label, category) => ({ key, label, category, type: 'trait' });
+  card({ ...summary, tags: [
+    make('gentle', '순딩이', 'personality'), make('playful', '똥꼬발랄', 'personality'),
+    make('people_friendly', '사람좋아', 'relationship'), make('brownie', '브라우니', 'appearance_color'),
+    make('curly', '곱슬몽실', 'appearance_extra'), make('cuddly', '품에쏙', 'size'),
+  ], safety_badges: [{ key: 'bite_caution', label: '입질주의', evidence: '방어적 입질' }] });
+  const chips = within(screen.getByRole('list', { name: '대표 태그' })).getAllByRole('listitem');
+  expect(chips.map((chip) => chip.textContent)).toEqual(['순딩이', '사람좋아', '브라우니']);
+  expect(screen.queryByText('곱슬몽실')).not.toBeInTheDocument();
+  expect(within(screen.getByRole('list', { name: '안전 정보' })).getByText('입질주의')).toBeVisible();
+});
+
+it('uses current size when color is unmatched, and keeps extra appearance tags for detail', () => {
+  card({ ...summary, tags: [
+    { key: 'gentle', type: 'trait', label: '순딩이', category: 'personality' },
+    { key: 'curly', type: 'vibe', label: '곱슬몽실', category: 'appearance_extra' },
+    { key: 'cuddly', type: 'vibe', label: '품에쏙', category: 'size' },
+  ] });
+  expect(screen.getByText('품에쏙')).toBeVisible();
+  expect(screen.queryByText('곱슬몽실')).not.toBeInTheDocument();
+});
+
 it('keeps unknown weight and age visible, uses the placeholder and hides empty tags', () => {
   card({ ...summary, birth_year: null, age_text: null, weight_kg: null });
   expect(screen.getByText(/나이 미상/)).toHaveTextContent('체중 미상');

@@ -141,6 +141,8 @@ class AnimalQueries:
             if detail
             else [Animal.__table__.c[name] for name in SUMMARY_FIELDS]
         )
+        if not detail:
+            columns += [Animal.special_mark, Animal.social_text, Animal.health_text]
         statement = select(
             *columns,
             self.size.label("size_group"),

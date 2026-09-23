@@ -12,6 +12,9 @@ React Router Framework + React + Vite + JavaScript/JSX + Tailwind 기반의 프�
 
 ## Frontend 실행
 
+태그 생성은 [TRAIT 3.0 / VIBE 2.0 규칙과 재생성 안내](docs/tag-generation.md)를 따릅니다.
+성격·관계·색상·현재 몸집 태그와 별도 안전 배지를 제공하며 건강·나이·성별 태그는 생성하지 않습니다.
+
 Node.js 22.22 이상이 필요하며 Node.js 24.18.0 / npm 12.0.2에서 검증했습니다.
 앞서 Backend를 `127.0.0.1:8080`에서 실행한 후 별도 터미널에서 실행합니다.
 
@@ -40,7 +43,9 @@ preview 주소는 `http://127.0.0.1:4173`이며 빌드 시 선택한 API를 사�
 구조는 [Phase 6 보고](docs/phase6-frontend-base.md), Main·목록은 [Phase 7 보고](docs/phase7-discovery.md),
 상세 화면·검증·잔여 항목은 [Phase 8 보고](docs/phase8-detail.md)를 참조합니다.
 상세 화면은 detail와 `similar?limit=4` 두 API만 사용합니다. 설명·행동·건강 정보는 원문이 있을 때만 표시합니다.
-**Phase 8.5 / 9는 사용자 승인 전 시작하지 않습니다.**
+Phase 8 승인 후 [Phase 8.5 행동 규칙 정제](docs/phase8-5-behavior.md)를 구현하고 DEV에 반영했습니다.
+사람 검토 완료를 간주하라는 사용자 지시로 진행했으며 실측 precision은 미측정입니다.
+보수적인 TRAIT 5종/6개 규칙만 활성화했습니다. **Phase 9는 승인 전 시작하지 않습니다.**
 
 ## Phase 5 구현
 
