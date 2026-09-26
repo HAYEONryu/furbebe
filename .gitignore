@@ -1,0 +1,24 @@
+.env
+.env.*
+!.env.example
+
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.venv/
+
+node_modules/
+dist/
+
+.local/
+tmp/
+profiling_raw/
+
+# Frontend build/runtime artifacts; local browser verification outputs.
+frontend/build/
+frontend/.react-router/
+frontend/.wrangler/
+frontend/coverage/
+.playwright-cli/
+output/playwright/

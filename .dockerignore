@@ -1,0 +1,8 @@
+**
+!backend/
+!backend/**
+backend/tests/
+backend/**/__pycache__/
+backend/**/*.pyc
+backend/**/.env
+backend/**/.env.*
