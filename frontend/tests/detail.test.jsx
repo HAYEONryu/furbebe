@@ -55,6 +55,10 @@ it('shows every character tag and independent safety badges while preserving the
   expect(screen.getByText('피부질환 치료 중')).toBeVisible();
   expect(screen.queryByText('케어필요')).not.toBeInTheDocument();
   expect(screen.queryByText('건강양호')).not.toBeInTheDocument();
+  expect(within(screen.getByRole('list', { name: '성격' })).getByText('순딩이')).toBeVisible();
+  expect(within(screen.getByRole('list', { name: '외형 특징' })).getByText('곱슬몽실')).toBeVisible();
+  await userEvent.setup().click(screen.getByText('안전 정보의 등록 근거'));
+  expect(screen.getByText('방어적 입질')).toBeVisible();
 });
 
 it('loads detail and similar?limit=4 only, with factual summary, shelter and metadata', async () => {

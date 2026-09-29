@@ -3,6 +3,9 @@ import { SiteLayout } from './components/site-layout.jsx';
 import { RouteError } from './components/route-error.jsx';
 import { LoadingState } from './components/states.jsx';
 import './styles/app.css';
+import { HOME_SEO, pageMeta } from './services/seo.js';
+
+export function meta({ error } = {}) { return pageMeta(HOME_SEO, error); }
 
 export function Layout({ children }) {
   return <html lang="ko">

@@ -1,10 +1,13 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 import { expect, it, vi } from 'vitest';
 import { AnimalImage } from '../app/components/animal-image.jsx';
 import { EmptyState, ErrorState, ImageEmptyState, LoadingState } from '../app/components/states.jsx';
 import { Button } from '../app/components/button.jsx';
+import { FilterDialog } from '../app/components/discovery-filters.jsx';
+import { parseDiscoveryQuery } from '../app/services/discovery-query.js';
+import { filters } from './fixtures.js';
 
 it('exposes an accessible branded image placeholder without a remote request', () => {
   const { container } = render(<ImageEmptyState />);
@@ -42,4 +45,23 @@ it('announces loading and explains an empty result', () => {
 it('defaults common buttons to a non-submitting action', () => {
   render(<Button aria-label="관심 동물 저장">♡</Button>);
   expect(screen.getByRole('button', { name: '관심 동물 저장' })).toHaveAttribute('type', 'button');
+});
+
+it('groups API tags and applies their original keys across categories', async () => {
+  const onApply = vi.fn();
+  const tags = [
+    { key: 'gentle', label: '순딩이', type: 'trait', category: 'personality' },
+    { key: 'brownie', label: '브라우니', type: 'vibe', category: 'appearance_color' },
+    { key: 'legacy', label: '기존 등록 태그', type: 'fact' },
+  ];
+  render(<FilterDialog filters={filters} tags={tags} state={parseDiscoveryQuery()} onApply={onApply} />);
+  const user = userEvent.setup();
+  await user.click(screen.getByRole('button', { name: '필터' }));
+  const dialog = within(screen.getByRole('dialog'));
+  await user.click(within(dialog.getByRole('group', { name: '성격' })).getByLabelText('순딩이'));
+  await user.click(within(dialog.getByRole('group', { name: '털색 · 무늬' })).getByLabelText('브라우니'));
+  expect(within(dialog.getByRole('group', { name: '그 밖의 등록 정보' })).getByLabelText('기존 등록 태그')).toBeVisible();
+  await user.selectOptions(dialog.getByLabelText('여러 태그 일치 방식'), 'all');
+  await user.click(dialog.getByRole('button', { name: '선택한 조건 적용' }));
+  expect(onApply).toHaveBeenCalledWith(expect.objectContaining({ tag: ['gentle', 'brownie'], tag_match: 'all', page: 1 }));
 });

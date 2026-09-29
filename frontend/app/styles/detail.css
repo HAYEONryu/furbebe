@@ -11,9 +11,10 @@
   .gallery-thumbnails button { display: block; width: 100%; overflow: hidden; border: 2px solid transparent; border-radius: .6rem; background: var(--color-cream); }
   .gallery-thumbnails button[aria-pressed=true] { border-color: var(--color-ink); box-shadow: 0 0 0 2px var(--color-butter); }
   .gallery-thumbnails img { border-radius: .35rem; }
-  .gallery-thumbnails button > div { padding: .4rem; min-height: 54px; }
+  .gallery-thumbnails button > div:not(.source-image-frame) { padding: .4rem; min-height: 54px; }
   .gallery-thumbnails svg { width: 32px; height: 32px; }
   .gallery-thumbnails button > div span { display: none; }
+  .gallery-thumbnails .source-image-loading > div { padding: .25rem; }
   .detail-summary { align-self: center; min-width: 0; }
   .detail-summary h1 { margin: 1rem 0 .6rem; font-size: clamp(2rem, 4vw, 3rem); letter-spacing: -.04em; }
   .detail-state { display: inline-flex; padding: .3rem .8rem; border-radius: .5rem; background: var(--color-butter); font-size: .8rem; font-weight: 650; }
@@ -22,7 +23,8 @@
   .detail-notice { margin-top: .75rem; font-size: .75rem; color: var(--color-muted); }
   .detail-notice span { margin-left: .5rem; }
   .detail-tags { margin-block: 1.5rem .5rem; }
-  .detail-tags > ul { display: flex; flex-wrap: wrap; gap: .5rem; }
+  .detail-tag-group + .detail-tag-group { margin-top: .85rem; }
+  .detail-tag-group > ul { display: flex; flex-wrap: wrap; gap: .5rem; }
   .tag-evidence { margin-top: .75rem; color: var(--color-muted); font-size: .8rem; }
   .tag-evidence summary { padding-block: .6rem; min-height: 44px; cursor: pointer; }
   .tag-evidence dl { padding: .75rem 1rem; border-left: 2px solid var(--color-cream); }

@@ -1,6 +1,6 @@
 import { useId, useRef, useState } from 'react';
 import { Button } from './button.jsx';
-import { discoveryTags, regionOptions, updateDiscoveryQuery } from '../services/discovery-query.js';
+import { discoveryTags, regionOptions, tagGroups, updateDiscoveryQuery } from '../services/discovery-query.js';
 
 export function SelectField({ label, value, options, onChange, disabled = false, allLabel = '전체', name }) {
   const id = useId();
@@ -63,10 +63,12 @@ export function FilterDialog({ filters, tags, state, onApply }) {
             <SelectField label="중성화" name="neutered" value={draft.neutered} options={filters.neutered} onChange={(neutered) => update({ neutered })} />
           </div>
           <fieldset className="mt-7"><legend className="mb-2 font-semibold">태그</legend><p className="mb-3 text-sm text-muted">원천 정보에 근거한 특징이에요. 성격을 단정하지 않아요.</p>
-            <div className="flex flex-wrap gap-2">{discoveryTags(tags).map((tag) => <label key={tag.key} className="tag-checkbox">
+            <div className="grid gap-4">{tagGroups(discoveryTags(tags)).map((group) => <fieldset key={group.key}>
+              <legend className="mb-2 text-sm font-semibold text-muted">{group.label}</legend>
+              <div className="flex flex-wrap gap-2">{group.tags.map((tag) => <label key={tag.key} className="tag-checkbox">
               <input type="checkbox" name="tag" value={tag.key} checked={draft.tag.includes(tag.key)} onChange={() => update({ tag: draft.tag.includes(tag.key) ? draft.tag.filter((key) => key !== tag.key) : [...draft.tag, tag.key] })} />
               <span>{tag.emoji && <span aria-hidden="true">{tag.emoji} </span>}{tag.label}</span>
-            </label>)}</div>
+            </label>)}</div></fieldset>)}</div>
           </fieldset>
           {draft.tag.length > 1 && <div className="mt-4"><SelectField label="여러 태그 일치 방식" value={draft.tag_match} options={[{ value: 'any', label: '하나 이상 일치' }, { value: 'all', label: '모두 일치' }]} onChange={(tag_match) => update({ tag_match: tag_match || 'any' })} allLabel="하나 이상 일치" /></div>}
         </div>

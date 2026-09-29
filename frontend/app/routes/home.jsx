@@ -6,10 +6,13 @@ import { EmptyState } from '../components/states.jsx';
 import { QuickDiscovery } from '../components/quick-discovery.jsx';
 import { getDiscovery } from '../services/discovery.js';
 import { loadRoute } from '../services/route-loader.js';
+import { HOME_SEO, pageMeta, pageSeo } from '../services/seo.js';
 export { RouteError as ErrorBoundary } from '../components/route-error.jsx';
 
-export function meta() { return [{ title: 'FURBEBE · Find Your Forever' }, { name: 'description', content: '가족을 기다리는 아이와, 아이를 기다리는 가족의 인연을 이어드립니다. 구조동물의 소식을 만나보세요.' }]; }
-export function loader({ request }) { return loadRoute(() => getDiscovery({ signal: request.signal, home: true })); }
+export function meta({ loaderData, error } = {}) { return pageMeta(loaderData?.seo ?? HOME_SEO, error); }
+export function loader({ request }) {
+  return loadRoute(async () => ({ ...await getDiscovery({ signal: request.signal, home: true }), seo: pageSeo(HOME_SEO, request.url) }));
+}
 
 export default function Home({ loaderData }) {
   const featured = loaderData.items.find((animal) => animal.primary_image) ?? loaderData.items[0];

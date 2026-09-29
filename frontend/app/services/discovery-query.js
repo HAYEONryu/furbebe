@@ -48,6 +48,18 @@ export function discoveryTags(tags) {
       Number(b.type === 'vibe') - Number(a.type === 'vibe'));
 }
 
+// These are presentation labels for API categories, never a local tag catalog.
+const TAG_GROUPS = [
+  ['personality', '성격'], ['relationship', '사람과의 관계'],
+  ['appearance_color', '털색 · 무늬'], ['appearance_extra', '외형 특징'], ['size', '현재 몸집'],
+];
+export function tagGroups(tags) {
+  const unique = [...new Map(tags.map((tag) => [tag.key, tag])).values()];
+  const groups = TAG_GROUPS.map(([key, label]) => ({ key, label, tags: unique.filter((tag) => tag.category === key) }));
+  groups.push({ key: 'other', label: '그 밖의 등록 정보', tags: unique.filter((tag) => !TAG_GROUPS.some(([key]) => key === tag.category)) });
+  return groups.filter((group) => group.tags.length);
+}
+
 export function cardTags(tags) {
   const unique = [...new Map(tags.map((tag) => [tag.key, tag])).values()];
   if (!unique.some((tag) => tag.category)) return discoveryTags(unique).slice(0, 3);

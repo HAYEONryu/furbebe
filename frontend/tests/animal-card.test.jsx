@@ -2,7 +2,7 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router';
 import { beforeEach, expect, it } from 'vitest';
-import { AnimalCard } from '../app/components/animal-card.jsx';
+import { AnimalCard, AnimalGrid } from '../app/components/animal-card.jsx';
 import { FAVORITES_KEY } from '../app/services/favorites.js';
 import { summary, tags } from './fixtures.js';
 
@@ -75,4 +75,17 @@ it('allows keyboard navigation into the card independently from the favorite', a
   await user.keyboard('{Enter}');
   expect(await screen.findByRole('heading', { name: '상세 기본 화면' })).toBeVisible();
   expect(router.state.location.pathname).toBe('/dogs/' + summary.id);
+});
+
+it('prioritizes only the first listing photo and keeps later photos lazy', () => {
+  const image = { url: 'https://example.invalid/source.jpg', type: 'source', order: 1 };
+  const animals = [summary, { ...summary, id: '00000000-0000-0000-0000-000000000002' }].map((animal) => ({ ...animal, primary_image: image }));
+  const router = createMemoryRouter([{ path: '/', element: <AnimalGrid animals={animals} priorityFirst /> }]);
+  render(<RouterProvider router={router} />);
+  const photos = screen.getAllByRole('img');
+  expect(photos[0]).toHaveAttribute('loading', 'eager');
+  expect(photos[0]).toHaveAttribute('fetchpriority', 'high');
+  expect(photos[1]).toHaveAttribute('loading', 'lazy');
+  expect(photos[1]).toHaveAttribute('width', '640');
+  expect(photos[1]).toHaveAttribute('height', '480');
 });

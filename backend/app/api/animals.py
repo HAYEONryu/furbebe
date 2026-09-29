@@ -38,10 +38,10 @@ class TagQuery(BaseModel):
     active_only: bool = True
 
 
-def cache(response, seconds):
+def cache(response, seconds, *, today):
     now = datetime.now(UTC).astimezone(KST)
-    midnight = datetime.combine(now.date() + timedelta(days=1), time.min, KST)
-    # Derived ages/status and new_today change at KST midnight.
+    midnight = datetime.combine(today + timedelta(days=1), time.min, KST)
+    # Expire at the query date's midnight, even if the query finishes next day.
     seconds = min(seconds, max(0, int((midnight - now).total_seconds())))
     response.headers["Cache-Control"] = f"public, max-age={seconds}"
 
@@ -49,14 +49,14 @@ def cache(response, seconds):
 @router.get("/animals", response_model=AnimalListResponse)
 def animals(filters: Annotated[AnimalFilters, Query()], service: Service, response: Response):
     result = service.animals(filters)
-    cache(response, 60)
+    cache(response, 60, today=service.today)
     return result
 
 
 @router.get("/animals/{animal_id}", response_model=AnimalDetailResponse)
 def animal_detail(animal_id: UUID, service: Service, response: Response):
     result = service.detail(animal_id)
-    cache(response, 300)
+    cache(response, 300, today=service.today)
     return result
 
 
@@ -65,26 +65,26 @@ def similar_animals(
     animal_id: UUID, query: Annotated[SimilarQuery, Query()], service: Service, response: Response
 ):
     result = service.similar(animal_id, limit=query.limit)
-    cache(response, 300)
+    cache(response, 300, today=service.today)
     return result
 
 
 @router.get("/tags", response_model=TagListResponse)
 def tags(query: Annotated[TagQuery, Query()], service: Service, response: Response):
     result = service.tags(type=query.type, active_only=query.active_only)
-    cache(response, 600)
+    cache(response, 600, today=service.today)
     return result
 
 
 @router.get("/meta/filters", response_model=FilterMetaResponse)
 def filters_meta(service: Service, response: Response):
     result = service.meta()
-    cache(response, 600)
+    cache(response, 600, today=service.today)
     return result
 
 
 @router.get("/stats/overview", response_model=OverviewStatsResponse)
 def stats_overview(service: Service, response: Response):
     result = service.stats()
-    cache(response, 60)
+    cache(response, 60, today=service.today)
     return result

@@ -4,4 +4,5 @@ export default [
   index('routes/home.jsx'),
   route('dogs', 'routes/dogs.jsx'),
   route('dogs/:animalId', 'routes/dog-detail.jsx'),
+  route('robots.txt', 'routes/robots.js'),
 ];

@@ -67,7 +67,8 @@ FastAPI → service → repository → SQLAlchemy → psycopg → PostgreSQL로
 
 검증 범위·정책·실행 방법·테스트 결과는 [Phase 5 완료 보고](docs/phase5-read-api.md)에 있습니다.
 전체 테스트 **390 passed / 0 skipped**, Ruff 통과. PostgreSQL 테스트는 별도 로컬 DB에서 실행했습니다.
-후속 [재검토](docs/phase5-review.md)에서 DEV 설정 반영·자정 캐시 결함 2건을 재현했으며 아직 수정하지 않았습니다.
+후속 [재검토](docs/phase5-review.md)에서 재현한 DEV 설정 반영·자정 캐시 결함 2건은
+2026-09-29에 수정했습니다. 변경과 회귀 검증은 [수정 보고](docs/phase5-fixes.md)를 참조합니다.
 Phase 5 승인 후 Phase 6 프런트엔드 기반을 구현했습니다. Backend Docker build/run은 미검증입니다.
 
 ## Phase 4B 검증 — 2026-09-16

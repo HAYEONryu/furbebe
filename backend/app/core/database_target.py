@@ -68,7 +68,9 @@ def get_dev_database_settings(env_file: Path | None = None) -> Settings:
         if query["sslmode"] not in {"require", "verify-ca", "verify-full"}:
             raise ValueError
         return Settings(
-            _env_file=None,
+            # Keep the same dotenv/environment precedence as the regular app.
+            # The explicitly validated DEV URL still overrides DATABASE_URL.
+            _env_file=env_file or ROOT / ".env",
             app_env="development",
             database_url=url.set(query=query).render_as_string(hide_password=False),
         )
