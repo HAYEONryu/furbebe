@@ -6,15 +6,21 @@ import { FavoriteButton } from '../components/favorite-button.jsx';
 import { ImageGallery } from '../components/image-gallery.jsx';
 import { ShareButton } from '../components/share-button.jsx';
 import { TagChip } from '../components/tag-chip.jsx';
+import { SafetyBadges } from '../components/safety-badges.jsx';
 import { birthLabel, factLabel, getAnimalDetailPage, hasText, shelterPhoneHref, textOrUnknown, weightLabel } from '../services/animal-detail.js';
 import { loadRoute } from '../services/route-loader.js';
+import { pageMeta, pageSeo } from '../services/seo.js';
+import { tagGroups } from '../services/discovery-query.js';
 export { RouteError as ErrorBoundary } from '../components/route-error.jsx';
 
-export function meta({ data } = {}) {
-  return [{ title: data?.seo.title ?? '아이의 소식 · FURBEBE' }, ...(data?.seo ? [{ name: 'description', content: data.seo.description }] : [])];
+export function meta({ loaderData, error } = {}) {
+  return pageMeta(loaderData?.seo ?? { title: '아이의 소식 · FURBEBE', description: '보호소에 등록된 구조동물의 소식을 확인하세요.', path: '/dogs', noindex: true }, error);
 }
 export function loader({ params, request }) {
-  return loadRoute(() => getAnimalDetailPage(params.animalId, { signal: request.signal }));
+  return loadRoute(async () => {
+    const result = await getAnimalDetailPage(params.animalId, { signal: request.signal });
+    return { ...result, seo: pageSeo(result.seo, request.url) };
+  });
 }
 
 function Facts({ rows }) {
@@ -40,7 +46,7 @@ function AdoptionPromotion({ promotion }) {
     <p className="detail-source-note">등록된 홍보 내용과 기간을 확인해 주세요.</p>
     {rows.length > 0 && <Facts rows={rows} />}
     {hasText(promotion.description) && <p className="source-paragraph">{promotion.description}</p>}
-    {hasText(promotion.image_url) && <div className="promotion-image"><AnimalImage src={promotion.image_url} alt={hasText(promotion.title) ? `${promotion.title} 홍보 이미지` : '보호소에 등록된 입양 홍보 이미지'} /></div>}
+    {hasText(promotion.image_url) && <div className="promotion-image"><AnimalImage src={promotion.image_url} alt={hasText(promotion.title) ? `${promotion.title} 홍보 이미지` : '보호소에 등록된 입양 홍보 이미지'} fit="contain" natural /></div>}
   </section>;
 }
 
@@ -71,9 +77,13 @@ function DetailContent({ data }) {
         <p className="detail-at-a-glance">{factLabel('sex', animal.sex)} · {birthLabel(animal)} · {weightLabel(animal)}</p>
         {hasText(notice.notice_no) && <p className="detail-notice">공고번호 <span>{notice.notice_no}</span></p>}
         {detail.tags.length > 0 && <section className="detail-tags" aria-label="아이의 태그">
-          <ul>{detail.tags.map((tag) => <li key={tag.key}><TagChip label={tag.label} emoji={tag.emoji} type={tag.type} /></li>)}</ul>
+          {tagGroups(detail.tags).map((group) => <div key={group.key} className="detail-tag-group">
+            <h2 className="mb-2 text-xs font-semibold text-muted">{group.label}</h2>
+            <ul aria-label={group.label}>{group.tags.map((tag) => <li key={tag.key}><TagChip label={tag.label} emoji={tag.emoji} type={tag.type} /></li>)}</ul>
+          </div>)}
           {detail.tags.some((tag) => hasText(tag.evidence)) && <details className="tag-evidence"><summary>태그에 담긴 등록 정보</summary><dl>{detail.tags.filter((tag) => hasText(tag.evidence)).map((tag) => <div key={tag.key}><dt>{tag.label}</dt><dd>{tag.evidence}</dd></div>)}</dl></details>}
         </section>}
+        <SafetyBadges badges={detail.safety_badges} showEvidence />
         <a href="#shelter-info" className="text-link">보호소 정보 살펴보기 <span aria-hidden="true">↓</span></a>
       </header>
     </div>

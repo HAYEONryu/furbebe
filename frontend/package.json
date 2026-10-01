@@ -10,6 +10,8 @@
     "build": "react-router build",
     "preview": "vite preview --host 127.0.0.1 --port 4173",
     "check:worker": "wrangler deploy --dry-run",
+    "seo:sitemap": "node scripts/generate-sitemap.mjs",
+    "seo:check": "node scripts/check-seo.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "eslint . --max-warnings 0"

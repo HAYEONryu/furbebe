@@ -145,23 +145,22 @@ def test_age_policy_boundaries(birth, expected):
     assert age_group(birth, year=2026) == expected
 
 
-def test_only_structured_facts_and_mapped_vibes_generate():
+def test_released_traits_and_vibes_exclude_held_rules_and_health_tags():
     raw = source_row(
         specialMark="애교 많고 활발하며 질병 있음", sfeSoci="낯가림", sfeHealth="치료 필요"
     )
     tags = generate_tags(
         normalize_animal(ValidatedAnimal.model_validate(raw), today=TODAY), today=TODAY
     )
-    assert {tag.tag_key for tag in tags} == {"tiny", "puppy", "white", "bean", "baby_dog", "cloud"}
-    assert all(tag.evidence and tag.confidence == 1 for tag in tags)
-    assert {row["type"] for row in CATALOG} == {"fact", "vibe"}
+    assert {tag.tag_key for tag in tags} == {"playful", "cuddly", "white_coat"}
+    assert all(tag.evidence and 0 < tag.confidence <= 1 for tag in tags)
+    assert {tag.generator_version for tag in tags} == {"2.0", "3.0"}
+    assert {row["type"] for row in CATALOG} == {"trait", "vibe"}
     raw.update(upKindCd="422400", upKindNm="고양이", colorCd="흰색&갈색")
-    assert (
-        generate_tags(
-            normalize_animal(ValidatedAnimal.model_validate(raw), today=TODAY), today=TODAY
-        )
-        == []
+    cat_tags = generate_tags(
+        normalize_animal(ValidatedAnimal.model_validate(raw), today=TODAY), today=TODAY
     )
+    assert {tag.tag_key for tag in cat_tags} == {"playful", "cuddly", "brownie"}
 
 
 def test_pagination_honors_server_size_and_checks_terminal_page():

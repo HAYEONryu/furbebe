@@ -11,6 +11,7 @@ Neutered = Literal["yes", "no", "unknown"]
 SizeGroup = Literal["tiny", "small", "medium", "large", "unknown"]
 AgeGroup = Literal["puppy", "young", "adult", "senior", "unknown"]
 TagType = Literal["fact", "trait", "vibe"]
+TagCategory = Literal["personality", "relationship", "appearance_color", "appearance_extra", "size"]
 Sort = Literal["recent", "notice_end", "weight_asc", "weight_desc", "age_youngest", "age_oldest"]
 
 
@@ -60,6 +61,13 @@ class TagAssignmentResponse(BaseModel):
     emoji: str | None
     confidence: float = Field(ge=0, le=1)
     evidence: str | None
+    category: TagCategory | None = None
+
+
+class SafetyBadgeResponse(BaseModel):
+    key: Literal["bite_caution", "strong_guarding"]
+    label: str
+    evidence: str
 
 
 class RegionResponse(BaseModel):
@@ -104,6 +112,7 @@ class AnimalSummaryResponse(BaseModel):
     region: RegionResponse
     primary_image: ImageResponse | None
     tags: list[TagAssignmentResponse]
+    safety_badges: list[SafetyBadgeResponse] = Field(default_factory=list)
 
 
 class PaginationResponse(BaseModel):
@@ -189,6 +198,7 @@ class AnimalDetailResponse(BaseModel):
     found: FoundResponse
     images: list[ImageResponse]
     tags: list[TagAssignmentResponse]
+    safety_badges: list[SafetyBadgeResponse] = Field(default_factory=list)
     descriptions: DescriptionsResponse
     shelter: ShelterResponse | None
     adoption_promotion: AdoptionPromotionResponse | None
@@ -207,6 +217,7 @@ class TagResponse(BaseModel):
     label: str
     emoji: str | None
     description: str | None
+    category: TagCategory | None = None
 
 
 class TagListResponse(BaseModel):

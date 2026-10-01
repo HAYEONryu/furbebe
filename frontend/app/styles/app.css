@@ -51,7 +51,7 @@
   .hero-copy > .button { background: var(--color-ink); color: var(--color-ivory); padding-inline: 1.5rem; }
   .hero-visual { position: relative; align-self: center; padding: 1.5rem .4rem 1.8rem; min-width: 0; }
   .hero-photo { padding: .65rem; background: #fffdf8; border: 1px solid #e1cda6; border-radius: 1rem; transform: rotate(2deg); box-shadow: 0 10px 30px #493a2c12; }
-  .hero-photo img { aspect-ratio: 1 / 1; }
+  .hero-photo img, .hero-photo > div { aspect-ratio: 1 / 1; }
   .hero-photo figcaption { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .9rem .5rem .3rem; }
   .hero-photo-link { display: inline-flex; min-height: 44px; min-width: 44px; align-items: center; justify-content: center; border-radius: 50%; background: var(--color-butter); font-size: 1.4rem; }
   .hero-note { position: absolute; z-index: 1; top: .25rem; left: .7rem; transform: rotate(-5deg); padding: .45rem .9rem; background: var(--color-peach); font-size: .75rem; font-weight: 600; }
@@ -71,6 +71,10 @@
   .animal-card { position: relative; height: 100%; border: 1px solid var(--color-cream); border-radius: 1rem; background: #fffdf8; }
   .animal-card-link { display: block; height: 100%; border-radius: 1rem; }
   .animal-card-link:hover h3 { text-decoration: underline; }
+  .source-image-frame { position: relative; overflow: hidden; border-radius: .5rem; background: #eee4d4; }
+  .source-image-loading { position: absolute; inset: 0; pointer-events: none; }
+  .source-image-loading > div { height: 100%; aspect-ratio: auto; border-radius: inherit; }
+  .source-image-frame > img { position: relative; }
   .card-photo { overflow: hidden; border-radius: 1rem 1rem 0 0; }
   .card-photo img, .card-photo > div { border-radius: 0; }
   .card-content { padding: 1rem; }

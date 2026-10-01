@@ -19,7 +19,14 @@ function validImage(value) {
 function validTag(value) {
   return isRecord(value) && typeof value.key === 'string' && typeof value.label === 'string' &&
     (value.emoji === undefined || nullableString(value.emoji)) && optionalString(value.evidence) &&
-    ['fact', 'trait', 'vibe'].includes(value.type);
+    ['fact', 'trait', 'vibe'].includes(value.type) &&
+    (value.category == null || ['personality', 'relationship', 'appearance_color', 'appearance_extra', 'size'].includes(value.category));
+}
+
+function validSafetyBadges(value) {
+  return value === undefined || (Array.isArray(value) && value.every((badge) =>
+    isRecord(badge) && ['bite_caution', 'strong_guarding'].includes(badge.key) &&
+    typeof badge.label === 'string' && typeof badge.evidence === 'string'));
 }
 
 function validSummary(value) {
@@ -28,7 +35,7 @@ function validSummary(value) {
     (value.weight_kg === null || (typeof value.weight_kg === 'number' && Number.isFinite(value.weight_kg) && value.weight_kg >= 0)) &&
     nullableString(value.process_state) && isRecord(value.region) && nullableString(value.region.display) &&
     (value.primary_image === null || validImage(value.primary_image)) &&
-    Array.isArray(value.tags) && value.tags.every(validTag);
+    Array.isArray(value.tags) && value.tags.every(validTag) && validSafetyBadges(value.safety_badges);
 }
 
 /** Validate the boundaries the UI uses, while tolerating additional backend fields. */
@@ -46,7 +53,7 @@ export function animalDetail(value) {
     nullableString(value.animal.breed) && isRecord(value.notice) && nullableString(value.notice.process_state) &&
     isRecord(value.found) && isRecord(value.found.region) && nullableString(value.found.region.display) &&
     Array.isArray(value.images) && value.images.every(validImage) &&
-    Array.isArray(value.tags) && value.tags.every(validTag));
+    Array.isArray(value.tags) && value.tags.every(validTag) && validSafetyBadges(value.safety_badges));
   requireShape(optionalStrings(value.animal, ['sex', 'neutered', 'age_text', 'age_group', 'weight_text', 'size_group', 'color_text']) &&
     (value.animal.birth_year == null || Number.isInteger(value.animal.birth_year)) &&
     (value.animal.weight_kg == null || (typeof value.animal.weight_kg === 'number' && Number.isFinite(value.animal.weight_kg) && value.animal.weight_kg >= 0)) &&

@@ -9,5 +9,7 @@ export default defineConfig({
     include: ['tests/**/*.test.{js,jsx}'],
     clearMocks: true,
     restoreMocks: true,
+    // Bound concurrent jsdom instances on shared development/CI machines.
+    maxWorkers: 2,
   },
 });

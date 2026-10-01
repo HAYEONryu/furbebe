@@ -2,7 +2,7 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router';
 import { beforeEach, expect, it } from 'vitest';
-import { AnimalCard } from '../app/components/animal-card.jsx';
+import { AnimalCard, AnimalGrid } from '../app/components/animal-card.jsx';
 import { FAVORITES_KEY } from '../app/services/favorites.js';
 import { summary, tags } from './fixtures.js';
 
@@ -24,6 +24,29 @@ it('renders source facts and prioritizes VIBE with no more than three tags', () 
   const chips = within(screen.getByRole('list', { name: '대표 태그' })).getAllByRole('listitem');
   expect(chips).toHaveLength(3);
   expect(chips[0]).toHaveTextContent('콩만이');
+});
+
+it('shows two character tags and one color, with safety badges outside the tag limit', () => {
+  const make = (key, label, category) => ({ key, label, category, type: 'trait' });
+  card({ ...summary, tags: [
+    make('gentle', '순딩이', 'personality'), make('playful', '똥꼬발랄', 'personality'),
+    make('people_friendly', '사람좋아', 'relationship'), make('brownie', '브라우니', 'appearance_color'),
+    make('curly', '곱슬몽실', 'appearance_extra'), make('cuddly', '품에쏙', 'size'),
+  ], safety_badges: [{ key: 'bite_caution', label: '입질주의', evidence: '방어적 입질' }] });
+  const chips = within(screen.getByRole('list', { name: '대표 태그' })).getAllByRole('listitem');
+  expect(chips.map((chip) => chip.textContent)).toEqual(['순딩이', '사람좋아', '브라우니']);
+  expect(screen.queryByText('곱슬몽실')).not.toBeInTheDocument();
+  expect(within(screen.getByRole('list', { name: '안전 정보' })).getByText('입질주의')).toBeVisible();
+});
+
+it('uses current size when color is unmatched, and keeps extra appearance tags for detail', () => {
+  card({ ...summary, tags: [
+    { key: 'gentle', type: 'trait', label: '순딩이', category: 'personality' },
+    { key: 'curly', type: 'vibe', label: '곱슬몽실', category: 'appearance_extra' },
+    { key: 'cuddly', type: 'vibe', label: '품에쏙', category: 'size' },
+  ] });
+  expect(screen.getByText('품에쏙')).toBeVisible();
+  expect(screen.queryByText('곱슬몽실')).not.toBeInTheDocument();
 });
 
 it('keeps unknown weight and age visible, uses the placeholder and hides empty tags', () => {
@@ -52,4 +75,17 @@ it('allows keyboard navigation into the card independently from the favorite', a
   await user.keyboard('{Enter}');
   expect(await screen.findByRole('heading', { name: '상세 기본 화면' })).toBeVisible();
   expect(router.state.location.pathname).toBe('/dogs/' + summary.id);
+});
+
+it('prioritizes only the first listing photo and keeps later photos lazy', () => {
+  const image = { url: 'https://example.invalid/source.jpg', type: 'source', order: 1 };
+  const animals = [summary, { ...summary, id: '00000000-0000-0000-0000-000000000002' }].map((animal) => ({ ...animal, primary_image: image }));
+  const router = createMemoryRouter([{ path: '/', element: <AnimalGrid animals={animals} priorityFirst /> }]);
+  render(<RouterProvider router={router} />);
+  const photos = screen.getAllByRole('img');
+  expect(photos[0]).toHaveAttribute('loading', 'eager');
+  expect(photos[0]).toHaveAttribute('fetchpriority', 'high');
+  expect(photos[1]).toHaveAttribute('loading', 'lazy');
+  expect(photos[1]).toHaveAttribute('width', '640');
+  expect(photos[1]).toHaveAttribute('height', '480');
 });

@@ -7,7 +7,7 @@ export default [
   { ignores: ['build/**', '.react-router/**', '.wrangler/**', 'coverage/**'] },
   js.configs.recommended,
   {
-    files: ['**/*.{js,jsx}'],
+    files: ['**/*.{js,jsx,mjs}'],
     languageOptions: {
       globals: { ...globals.browser, ...globals.node },
       parserOptions: { ecmaFeatures: { jsx: true } },

@@ -1,4 +1,4 @@
-# FURBEBE Architecture — Phase 7
+# FURBEBE Architecture — Phase 8
 
 ## 현재 실행 경로
 
@@ -35,10 +35,12 @@ Phase 7은 Main과 목록의 탐색·관심 저장 UX를 구현했다. 상세는
 
 | Frontend 위치 | 책임 |
 | --- | --- |
-| `frontend/app/routes.js`, `routes/` | Main, Dogs Listing, 기본 상세 및 URL query 기반 loader |
+| `frontend/app/routes.js`, `routes/` | Main, Dogs Listing, 상세 및 URL query 기반 loader |
 | `frontend/app/services/api.js` | 공개 API origin, GET 옵션, 취소·timeout·JSON·오류 정규화 |
 | `frontend/app/services/animals.js`, `tags.js`, `meta.js` | FastAPI 도메인별 조회 경계 |
 | `frontend/app/services/discovery.js`, `discovery-query.js` | 목록·메타·태그 병렬 로딩, query 파싱·직렬화·페이지 reset |
+| `frontend/app/services/animal-detail.js`, `share.js` | 상세·유사 동물 병렬 조회, 사실 기반 표시·SEO 데이터, 기기 공유·URL 복사 |
+| `frontend/app/components/image-gallery.jsx`, `share-button.jsx`, `styles/detail.css` | 원본 비율 갤러리와 키보드 탐색, 공유 상태, 모바일 상세 배치 |
 | `frontend/app/components/animal-card.jsx`, `discovery-filters.jsx`, `pagination.jsx`, `quick-discovery.jsx` | 사진 중심 카드, 탐색·모바일 필터 dialog, API 기반 페이지 이동 |
 | `frontend/app/services/validation.js` | UI가 사용하는 JSON 구조의 가벼운 런타임 검사 |
 | `frontend/app/services/favorites.js`, `hooks/use-favorites.js` | 저장소 adapter와 React 구독; UI에서 localStorage 분리 |
@@ -56,6 +58,13 @@ Main은 최근 등록 6건, 목록은 페이지당 24건을 요청한다. 목록
 관심 버튼은 card link의 형제 요소로 두어 저장 클릭과 상세 이동을 분리한다.
 필터·정렬 변경은 첫 페이지로 돌아가며 페이지 이동은 나머지 조건을 보존한다.
 상세한 동작·접근성·검증 범위는 [Phase 7 보고](phase7-discovery.md)에 기록한다.
+상세는 기존 `GET /animals/{id}`와 `GET /animals/{id}/similar?limit=4`만 병렬 호출한다.
+유사 동물만 실패하면 본문은 유지하고 해당 영역에서 재시도를 제공한다. 본인·중복 ID는 방어적으로 제외한다.
+사진 선택은 component state이며 동물이 바뀌면 초기화된다. 공유는 현재 origin의 query/hash 없는 상세 URL을 쓴다.
+상세 JSON의 소비 필드는 경계에서 검증하며, 없는 설명은 숨기고 실제 원문은 HTML 해석 없이 표시한다.
+기존 FACT/VIBE/TRAIT를 표시할 수 있지만 새로운 추론이나 confidence 확률 표현은 추가하지 않는다.
+React Router 8의 `meta({ loaderData })`에 사실 기반 title/description을 전달한다.
+상세 검증과 후속 한계는 [Phase 8 보고](phase8-detail.md)에 기록한다.
 
 | 위치 | 책임 |
 | --- | --- |
@@ -134,4 +143,4 @@ sync가 생성한 FACT/VIBE 태그는 관측 시점의 파생 정보이므로 �
 후보 키워드로 production 성격 태그나 건강 진단을 생성하지 않는다.
 Docker build/run은 미검증이며 현 blocker가 아니다. 실제 컨테이너 검증은 deployment 단계에서 수행한다.
 Phase 5의 검증 수치·실행 방법·한계는 [읽기 API 완료 보고](phase5-read-api.md)를 참조한다.
-Phase 7 Main/Listing을 구현했으며 Phase 8은 사용자 승인 전 시작하지 않는다.
+Phase 8 Detail까지 구현했으며 Phase 8.5 / 9는 사용자 승인 전 시작하지 않는다.

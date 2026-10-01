@@ -7,11 +7,12 @@ import { Pagination } from '../components/pagination.jsx';
 import { getDiscovery } from '../services/discovery.js';
 import { discoveryHref, parseDiscoveryQuery, SORT_OPTIONS, updateDiscoveryQuery } from '../services/discovery-query.js';
 import { loadRoute } from '../services/route-loader.js';
+import { DOGS_SEO, pageMeta, pageSeo } from '../services/seo.js';
 export { RouteError as ErrorBoundary } from '../components/route-error.jsx';
 
-export function meta() { return [{ title: '아이들 찾기 · FURBEBE' }]; }
+export function meta({ loaderData, error } = {}) { return pageMeta(loaderData?.seo ?? DOGS_SEO, error); }
 export function loader({ request }) {
-  return loadRoute(() => getDiscovery({ signal: request.signal, search: new URL(request.url).search }));
+  return loadRoute(async () => ({ ...await getDiscovery({ signal: request.signal, search: new URL(request.url).search }), seo: pageSeo(DOGS_SEO, request.url) }));
 }
 
 function Listing({ data }) {
@@ -39,7 +40,7 @@ function Listing({ data }) {
     </fieldset></section>
     <section className={`listing-results ${pending ? 'is-pending' : ''}`} aria-label="검색 결과" aria-busy={pending}>
       <h2 className="sr-only">조건에 맞는 친구들</h2>
-      {items.length ? <AnimalGrid animals={items} /> : <EmptyState title={pagination.total > 0 ? '이 페이지에는 친구가 없어요.' : '조건에 맞는 친구가 아직 없어요.'} message={pagination.total > 0 ? '첫 페이지부터 다시 살펴보세요.' : '조건을 조금 넓히면 다른 만남이 기다리고 있을 거예요.'}>
+      {items.length ? <AnimalGrid animals={items} priorityFirst /> : <EmptyState title={pagination.total > 0 ? '이 페이지에는 친구가 없어요.' : '조건에 맞는 친구가 아직 없어요.'} message={pagination.total > 0 ? '첫 페이지부터 다시 살펴보세요.' : '조건을 조금 넓히면 다른 만남이 기다리고 있을 거예요.'}>
         <div className="mt-5"><ButtonLink to={pagination.total > 0 ? discoveryHref({ ...state, page: 1 }) : '/dogs'}>{pagination.total > 0 ? '첫 페이지로' : '모든 친구 보기'}</ButtonLink></div>
       </EmptyState>}
       <Pagination pagination={pagination} state={state} />

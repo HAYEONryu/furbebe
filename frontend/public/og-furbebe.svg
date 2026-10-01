@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#F6F0E4"/>
+  <rect x="48" y="48" width="1104" height="534" rx="40" fill="#F2D77C"/>
+  <text x="105" y="140" fill="#493A2C" font-family="Arial,sans-serif" font-size="32" font-weight="700" letter-spacing="7">FURBEBE</text>
+  <text x="100" y="290" fill="#493A2C" font-family="Georgia,serif" font-size="102">Find Your</text>
+  <text x="100" y="405" fill="#493A2C" font-family="Georgia,serif" font-style="italic" font-size="112">Forever.</text>
+  <text x="107" y="505" fill="#493A2C" font-family="Arial,sans-serif" font-size="27">A LITTLE INTEREST. A NEW BEGINNING.</text>
+  <g fill="#493A2C" transform="translate(920 290) rotate(15)"><ellipse cy="90" rx="65" ry="53"/><ellipse cx="-65" cy="15" rx="25" ry="35"/><ellipse cx="-24" cy="-26" rx="25" ry="35"/><ellipse cx="30" cy="-24" rx="25" ry="35"/><ellipse cx="72" cy="19" rx="25" ry="35"/></g>
+  <circle cx="1030" cy="485" r="18" fill="#EBAFA5"/>
+</svg>

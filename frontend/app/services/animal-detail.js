@@ -37,7 +37,7 @@ export function shelterPhoneHref(value) {
   return phone.replace(/\D/g, '').length >= 6 ? `tel:${phone}` : null;
 }
 
-/** Factual metadata shared by route meta and sharing; full SEO belongs to Phase 9. */
+/** Factual metadata shared by SSR route meta and sharing. */
 export function detailSeo(detail) {
   const name = hasText(detail.animal.breed) ? detail.animal.breed : '구조동물';
   const facts = [name, detail.found.region.display, detail.notice.process_state].filter(hasText);
@@ -45,6 +45,8 @@ export function detailSeo(detail) {
     title: `${name} · ${hasText(detail.found.region.display) ? `${detail.found.region.display} · ` : ''}FURBEBE`,
     description: `${facts.join(' · ')}. 등록된 구조동물 정보와 보호소 정보를 확인하세요.`,
     path: `/dogs/${detail.id}`,
+    image: sourceImages(detail.images)[0]?.url,
+    imageAlt: `${name}의 보호소 등록 사진`,
   };
 }
 
