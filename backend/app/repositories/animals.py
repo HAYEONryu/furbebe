@@ -192,6 +192,7 @@ class AnimalQueries:
             )
             conditions.append(
                 or_(
+                    Animal.notice_no.ilike(pattern, escape="\\"),
                     Animal.breed.ilike(pattern, escape="\\"),
                     self.organization.ilike(pattern, escape="\\"),
                     shelter_match,

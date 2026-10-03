@@ -3,13 +3,13 @@
 GROUPS = {
     "personality": [
         ("gentle", "순딩이"),
-        ("shy", "소심요정"),
+        ("shy", "수줍요정"),
         ("playful", "똥꼬발랄"),
         ("affectionate", "애교쟁이"),
         ("calm", "차분선비댕"),
         ("curious", "호기심대장"),
         ("smart", "똑똑이"),
-        ("sensitive", "천천히친해져"),
+        ("sensitive", "새콤새침"),
     ],
     "relationship": [
         ("people_friendly", "사람좋아"),
