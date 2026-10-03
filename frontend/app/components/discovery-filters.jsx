@@ -18,7 +18,7 @@ export function SelectField({ label, value, options, onChange, disabled = false,
 export function QuickTags({ tags, selected = [], onToggle }) {
   return <div className="quick-tags-row" role="group" aria-label="빠른 태그 선택">
     {discoveryTags(tags).slice(0, 7).map((tag) => <button key={tag.key} type="button" className="discovery-chip" aria-pressed={selected.includes(tag.key)} onClick={() => onToggle(tag.key)}>
-      {tag.emoji && <span aria-hidden="true">{tag.emoji} </span>}{tag.label}
+      {tag.label}{tag.emoji && <span aria-hidden="true"> {tag.emoji}</span>}
     </button>)}
   </div>;
 }
@@ -67,7 +67,7 @@ export function FilterDialog({ filters, tags, state, onApply }) {
               <legend className="mb-2 text-sm font-semibold text-muted">{group.label}</legend>
               <div className="flex flex-wrap gap-2">{group.tags.map((tag) => <label key={tag.key} className="tag-checkbox">
               <input type="checkbox" name="tag" value={tag.key} checked={draft.tag.includes(tag.key)} onChange={() => update({ tag: draft.tag.includes(tag.key) ? draft.tag.filter((key) => key !== tag.key) : [...draft.tag, tag.key] })} />
-              <span>{tag.emoji && <span aria-hidden="true">{tag.emoji} </span>}{tag.label}</span>
+              <span>{tag.label}{tag.emoji && <span aria-hidden="true"> {tag.emoji}</span>}</span>
             </label>)}</div></fieldset>)}</div>
           </fieldset>
           {draft.tag.length > 1 && <div className="mt-4"><SelectField label="여러 태그 일치 방식" value={draft.tag_match} options={[{ value: 'any', label: '하나 이상 일치' }, { value: 'all', label: '모두 일치' }]} onChange={(tag_match) => update({ tag_match: tag_match || 'any' })} allLabel="하나 이상 일치" /></div>}

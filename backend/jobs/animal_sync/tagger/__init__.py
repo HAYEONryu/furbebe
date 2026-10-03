@@ -121,4 +121,5 @@ def generate_tags(animal: NormalizedAnimal, *, today: date) -> list[TagEvidence]
         )
         tags.append(TagEvidence(key, f"weight_kg={weight}; 현재 몸집", "current-size-v2"))
     order = {row["key"]: row["display_order"] for row in CATALOG}
-    return sorted(tags, key=lambda tag: order[tag.tag_key])
+    unique = {tag.tag_key: tag for tag in tags}
+    return sorted(unique.values(), key=lambda tag: order[tag.tag_key])

@@ -16,6 +16,6 @@ export function QuickDiscovery({ filters, tags }) {
       <SelectField label="나이" value={selection.age_group} options={filters.age_groups.filter((item) => item.value !== 'unknown')} onChange={choose('age_group')} allLabel="모든 나이" />
       <Button type="submit">친구 찾아보기 <span aria-hidden="true">↗</span></Button>
     </form>
-    {tags.length > 0 && <div className="mt-5 flex flex-wrap items-center gap-2"><span className="mr-2 text-sm text-muted">이런 친구는 어때요?</span>{discoveryTags(tags).slice(0, 5).map((tag) => <Link key={tag.key} className="discovery-chip" rel="nofollow" to={discoveryHref({ tag: [tag.key] })}>{tag.emoji && <span aria-hidden="true">{tag.emoji} </span>}{tag.label}</Link>)}</div>}
+    {tags.length > 0 && <div className="mt-5 flex flex-wrap items-center gap-2"><span className="mr-2 text-sm text-muted">이런 친구는 어때요?</span>{discoveryTags(tags).slice(0, 5).map((tag) => <Link key={tag.key} className="discovery-chip" rel="nofollow" to={discoveryHref({ tag: [tag.key] })}>{tag.label}{tag.emoji && <span aria-hidden="true"> {tag.emoji}</span>}</Link>)}</div>}
   </section>;
 }

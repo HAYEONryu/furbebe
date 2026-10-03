@@ -39,13 +39,23 @@ GROUPS = {
         ("giant", "왕크왕귀"),
     ],
 }
+EMOJIS = {
+    "gentle": "🙂", "shy": "🧚", "playful": "🤸", "affectionate": "💕",
+    "calm": "🍵", "curious": "🔎", "smart": "🧠", "sensitive": "🌵",
+    "people_friendly": "🥰", "outgoing": "🙋", "dog_friendly": "🐕",
+    "smiley": "😄", "lap_dog": "🛋️", "patterned_coat": "🎨",
+    "cookies_cream": "🍪", "brownie": "🤎", "cream_coat": "🍦",
+    "black_coat": "🖤", "white_coat": "🤍", "curly": "🌀",
+    "pointed_ears": "👂", "wagging_tail": "🚁", "fluffy": "☁️",
+    "pocket": "🫘", "cuddly": "🧸", "sturdy": "💪", "giant": "🦁",
+}
 CATEGORIES = {key: category for category, entries in GROUPS.items() for key, _ in entries}
 CATALOG = [
     {
         "key": key,
         "type": "trait" if category in {"personality", "relationship"} else "vibe",
         "label": label,
-        "emoji": None,
+        "emoji": EMOJIS[key],
         "description": f"보호소 등록 정보에 근거한 {category} 태그",
         "display_order": order,
     }

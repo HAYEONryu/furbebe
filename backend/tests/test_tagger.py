@@ -292,3 +292,12 @@ def test_new_tags_combine_without_adding_a_second_color_or_duplicate_affection()
     assert CATEGORIES["fluffy"] == "appearance_extra"
     assert labels(social_text="무릎강아지", health_text="복슬한 털") == {"복슬복슬"}
     assert not ({"발라당", "무릎친구", "팔랑귀"} & set(LABELS.values()))
+
+
+def test_all_catalog_tags_have_unique_meaningful_emojis_and_labels():
+    from backend.jobs.animal_sync.tagger import CATALOG
+
+    assert len(CATALOG) == 27
+    assert all(row["emoji"] for row in CATALOG)
+    assert len({row["emoji"] for row in CATALOG}) == len(CATALOG)
+    assert len({row["label"] for row in CATALOG}) == len(CATALOG)

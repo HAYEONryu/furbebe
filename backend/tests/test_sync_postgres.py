@@ -137,7 +137,7 @@ def test_controlled_update_reconciles_images_tags_and_preserves_identity(sync_en
             )
         )
     changed = row | {
-        "processState": "종료(입양)",
+        "processState": "보호중",
         "specialMark": "수정한 검토용 원문",
         "popfile1": row["popfile2"],
         "popfile2": "https://example.invalid/new.jpg",
@@ -169,7 +169,7 @@ def test_controlled_update_reconciles_images_tags_and_preserves_identity(sync_en
     assert updated["last_seen_at"] == updated["updated_at"] == NOW + timedelta(hours=1)
     assert updated["source_updated_at"] == NOW + timedelta(hours=1)
     assert (
-        updated["process_state"] == "종료(입양)" and updated["special_mark"] == "수정한 검토용 원문"
+        updated["process_state"] == "보호중" and updated["special_mark"] == "수정한 검토용 원문"
     )
     assert updated["raw_payload"] == changed
     assert {image["image_url"] for image in images} == {
@@ -441,3 +441,15 @@ def test_smoke_limit_refuses_oversized_scope_before_domain_writes(sync_engine):
     assert result.status == "failed" and result.error_code == "SOURCE_TOTAL_EXCEEDS_LIMIT"
     assert result.inserted_count == result.updated_count == 0
     assert all(count == 0 for count in counts(sync_engine).values())
+
+
+def test_ended_records_are_not_inserted_and_existing_records_are_deleted(sync_engine):
+    ended = source_row(processState="종료(입양)", updTm="2026-09-15T04:00:00Z")
+    excluded = run(sync_engine, [ended])
+    assert excluded.status == "success" and excluded.excluded_count == 1
+    assert counts(sync_engine)["animals"] == 0
+    assert run(sync_engine, [source_row()]).status == "success"
+    result = run(sync_engine, [ended])
+    assert result.status == "success" and result.deleted_count == 1
+    assert counts(sync_engine)["animals"] == 0
+    assert counts(sync_engine)["animal_images"] == counts(sync_engine)["animal_tags"] == 0

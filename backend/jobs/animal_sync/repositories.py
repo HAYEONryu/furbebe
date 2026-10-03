@@ -24,6 +24,8 @@ class BatchCounts:
     updated: int
     stale: int = 0
     unchanged: int = 0
+    excluded: int = 0
+    deleted: int = 0
 
 
 def chunks(rows, size=1000):
@@ -208,13 +210,21 @@ class SyncRepository:
         }
         stale = []
         current = []
+        removed = []
+        excluded = 0
         for animal in animals:
             old = existing.get(animal.values["source_id"])
             incoming = animal.values["source_updated_at"]
             if old and old.source_updated_at and incoming and incoming < old.source_updated_at:
                 stale.append(old.id)
+            elif animal.values.get("species") != "dog" or animal.values.get("process_state") not in {"보호중", "입양 가능"}:
+                excluded += 1
+                if old:
+                    removed.append(old.id)
             else:
                 current.append(animal)
+        if removed:
+            self.connection.execute(delete(Animal).where(Animal.id.in_(removed)))
         if stale:
             self.connection.execute(
                 update(Animal)
@@ -273,8 +283,8 @@ class SyncRepository:
             self.reconcile_images(current, ids)
             active = self.catalog()
             self.reconcile_tags(current, ids, active=active, today=today)
-        inserted = sum(key not in existing for key in keys)
-        counts = BatchCounts(inserted, changed_count - inserted, len(stale), unchanged_count)
+        inserted = sum(animal.values["source_id"] not in existing for animal in current)
+        counts = BatchCounts(inserted, changed_count - inserted, len(stale), unchanged_count, excluded, len(removed))
         # Domain changes and durable counters commit together.
         self.connection.execute(
             update(SyncRun)

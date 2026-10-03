@@ -38,6 +38,8 @@ class SyncReport:
     updated_count: int = 0
     unchanged_count: int = 0
     stale_count: int = 0
+    excluded_count: int = 0
+    deleted_count: int = 0
     error_count: int = 0
     error_code: str | None = None
     run_persisted: bool = False
@@ -235,6 +237,8 @@ def sync(
                 report.updated_count += counts.updated
                 report.unchanged_count += counts.unchanged
                 report.stale_count += counts.stale
+                report.excluded_count += counts.excluded
+                report.deleted_count += counts.deleted
                 page_inserted += counts.inserted
                 page_updated += counts.updated
                 emit(
