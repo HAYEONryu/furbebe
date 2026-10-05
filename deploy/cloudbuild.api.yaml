@@ -1,5 +1,6 @@
 # GitHub manual trigger (Manual invocation): build context is the repository root.
 # Run from Cloud Build's Run trigger button; do not attach a push/PR event.
+# Configure the manual trigger's source branch as main.
 # Select the deployment service account on the Cloud Build trigger.
 # This updates an existing Cloud Run service; its runtime settings live in Cloud Run.
 steps:

@@ -18,8 +18,10 @@ Cloud Run의 continuous deployment가 연결돼 있다면 연결된 자동 배�
 아래 수동 trigger에는 push/PR 이벤트나 schedule을 연결하지 않습니다.
 실행 시점은 Cloud Build trigger의 Event가 결정하며 YAML 파일만으로 수동 실행이 강제되는 것은 아닙니다.
 
-배포할 코드와 `deploy/cloudbuild.api.yaml`이 GitHub main에 있어야 합니다.
-로컬에만 있는 파일은 trigger가 읽을 수 없습니다. 작업 branch의 변경을 검토하고 main에 merge합니다.
+운영 수동 배포는 main 브랜치를 사용합니다.
+배포할 코드와 `deploy/cloudbuild.api.yaml`을 포함한 작업 branch를 push하고,
+GitHub에서 검사 결과를 확인한 뒤 PR을 main에 merge합니다.
+로컬에만 있는 파일은 trigger가 읽을 수 없습니다. main에서 배포 설정 파일이 보이는지 확인합니다.
 .env, 비밀번호, API key, .local 자료는 Git에 넣지 않습니다.
 실제 DB URL은 기존 Cloud Run의 Secret Manager 참조로 관리합니다.
 
@@ -113,7 +115,7 @@ Cloud Build 설정의 기본 substitution은 `_REGION=asia-northeast3`, `_REPOSI
 
 Cloud Build → Triggers → `furbebe-api-manual` → Run trigger를 누릅니다.
 실행 패널에서 main을 선택하고 Run trigger를 누르면 그 시점의 GitHub 코드를 빌드·배포합니다.
-배포할 branch/tag는 실행 패널에서 바꿀 수 있으며 대상 commit과 검사 결과를 확인합니다.
+실행 패널에서도 branch가 main인지, 대상 commit의 검사 결과가 정상인지 확인합니다.
 build-api → push-api → update-api 단계와 최종 SUCCESS를 확인합니다.
 Artifact Registry의 새 image tag는 `<commit SHA>-<build ID>`이며 Cloud Run revision에서 해당 image digest를 확인합니다.
 배포는 기존 `api`의 image만 갱신합니다. Secret 참조·환경변수·runtime 계정·포트·리소스·ingress는 기존 설정을 사용합니다.
