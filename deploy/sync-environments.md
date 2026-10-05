@@ -1,25 +1,72 @@
-# Sync schedule configuration
+# GitHub Actions 수집 설정
 
-GitHub Environment `development-sync`:
-- Secret: `DATABASE_URL_dev`, `DATA_GO_KR_SERVICE_KEY`
-- Variables: `SUPABASE_URL_dev`
-- APP_ENV is fixed to development in the workflow.
+기준 workflow: [.github/workflows/animal-sync.yml](../.github/workflows/animal-sync.yml).
+CI workflow와 달리 이 workflow는 실제 DB에 쓰는 수집 작업입니다.
 
-GitHub Environment `production-sync`:
-- Secret: `DATABASE_URL_prod`, `DATA_GO_KR_SERVICE_KEY`
-- Variables: `SUPABASE_URL_prod`, `FURBEBE_PROD_PROJECT_REF`
-- APP_ENV is fixed to production. Project reference is checked against both project URL and credential.
-- Configure permitted deployment branch `main`; use protected workflow changes and required reviewers when the GitHub plan supports them.
-- Do not put prod credentials in repository-wide secrets or the development environment.
+## DEV job 설정
 
-Scheduled collection runs twice daily at **00:00 and 12:00 Asia/Seoul**, using UTC cron `0 3,15 * * *`. With `PRODUCTION_SYNC_ENABLED` unset/false, the development job runs on schedule against the current DEV database. Setting it to true switches scheduled collection to the production job; DEV and PROD never both run for one scheduled event. Both scheduled jobs use `--full`. Required environment secrets and variables above must be configured, and the workflow must be present on GitHub's default branch for schedules to run. GitHub may delay scheduled starts; these are trigger times rather than an exact-time guarantee.
+현재 development job에는 GitHub Environment 지정이 없습니다.
+실제 workflow가 읽는 **repository secrets** 이름은 다음과 같습니다.
 
-Manual DEV runs retain full API-window collection. Manual PROD runs default to the last seven KST calendar days (today and the preceding six days), or explicit supplied dates, with a source-total limit of 1000. An oversized source response fails before animal writes; it is not truncated. Manual production also requires `APPROVED_PRODUCTION_SYNC`. Sync stores only dogs with source status 보호중 or 입양 가능; ended posts are excluded from new inserts and previously stored posts that become ended are retained with is_active=false. The read API derives 입양 가능 from 보호중 after ten calendar days from notice start. The filter defaults to 입양 가능 and offers 보호중 as its only other option.
+| GitHub secret | 프로세스 변수 |
+| --- | --- |
+| DATA_GO_KR_SERVICE_KEY | DATA_GO_KR_SERVICE_KEY |
+| DATABASE_URL_DEV | DATABASE_URL_dev |
+| SUPABASE_URL_DEV | SUPABASE_URL_dev |
 
-CLI remains `python -m backend.jobs.animal_sync.main`; target is explicit `--database-target supabase-prod` or `supabase-dev`. Production requires APP_ENV=production, separate `DATABASE_URL_prod` and expected project metadata. No fallback to generic DATABASE_URL or DEV; production replay is rejected. Session-mode port 5432 is required because sync uses session advisory locks. Pool 1 + overflow 1 covers the held sync connection and finalization connection. The existing PostgreSQL advisory lock also protects against overlapping writers outside Actions.
+APP_ENV=development, pool 1+1로 실행합니다.
+development-sync environment만 만들어 secret을 넣어도 현재 job이 읽지 않습니다.
+DEV 수동 실행은 날짜/full_scan 입력과 무관하게 --full입니다.
 
-Raw pages remain ephemeral on the runner. Do not upload `.local/sync` captures as public artifacts. Logs retain only existing redacted reports and page counters. Limit Actions log retention and repository access. Failures before sync initialization may have only a safe error code rather than a sync id.
+## PROD job 설정
 
-Manual runs default to a supplied YYYY-MM-DD date window with max_animals=1000, rejected before writes if larger. Invalid or reversed dates fail before opening a DB connection. A full API-window manual scan requires an explicit full_scan checkbox. Scheduled runs use --full.
+Environment **production-sync**를 만듭니다.
+production secret을 이 environment에 제한하고 가능한 plan에서는 필요한 reviewer와 main branch 제한을 설정합니다.
 
-Production image and tag reconciliation retains obsolete rows with is_active=false. Public reads omit inactive animals/images/assignments. Workflow upload/remote configuration and schedule activation occur only after validation.
+| GitHub environment 항목 | 이름 | 프로세스 변수 |
+| --- | --- | --- |
+| secret | DATABASE_URL_prod | DATABASE_URL_prod |
+| secret | DATA_GO_KR_SERVICE_KEY | DATA_GO_KR_SERVICE_KEY |
+| variable | SUPABASE_URL_prod | SUPABASE_URL_prod |
+| variable | FURBEBE_PROD_PROJECT_REF | FURBEBE_PROD_PROJECT_REF |
+
+APP_ENV=production, HTTPS FRONTEND_ORIGIN과 pool 1+1은 workflow에서 고정합니다.
+프로젝트 ref와 URL·접속 사용자/호스트는 대상 guard가 검사합니다.
+environment 저장소 이름은 workflow와 **대소문자까지 동일하게** 구성합니다.
+
+## 수동 PROD 실행
+
+Actions > Animal Sync > Run workflow:
+
+1. 검토된 branch와 target=supabase-prod.
+2. production_confirmation=APPROVED_PRODUCTION_SYNC.
+3. 기본은 오늘과 이전 6일의 KST 7일 범위, raw total 최대 1000.
+4. 다른 날짜는 YYYY-MM-DD로 시작·종료를 모두 검토.
+5. full_scan=true이면 API 기본 날짜 범위 전체이며 날짜/1000 제한을 사용하지 않음.
+
+raw total이 1000보다 크면 동물 쓰기 전에 실패합니다. 임의 truncation은 없습니다.
+수동 확인 문자열은 PROD에만 적용하고 scheduled PROD는 해당 조건을 검사하지 않습니다.
+실행 후 status, sync_id, report, DB durable counter와 원천 제외/오류를 확인합니다.
+
+## 정기 실행
+
+UTC cron `0 3,15 * * *` = KST **12:00, 다음 날 00:00**, 하루 2회입니다.
+
+| repository variable PRODUCTION_SYNC_ENABLED | schedule 대상 |
+| --- | --- |
+| true | PROD job |
+| unset 또는 다른 값 | DEV job |
+
+DEV/PROD가 한 schedule event에서 동시에 실행되지 않습니다.
+두 scheduled job은 --full입니다.
+false는 전체 수집 중지가 아니므로 장애 시 schedule/workflow를 disable하고 running job도 확인합니다.
+
+schedule은 default branch의 workflow에서 실행하며 시작이 지연될 수 있습니다.
+[GitHub schedule 안내](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule)
+
+job timeout은 60분, concurrency는 animal-sync-dev/prod별 한 개,
+cancel-in-progress=false입니다. PostgreSQL advisory lock은 Actions 외부 CLI 중복도 막습니다.
+
+runner의 .local/sync 원문은 ephemeral이며 공개 artifact로 업로드하지 않습니다.
+실행 로그와 보고서는 권한·retention을 관리합니다.
+최초 운영 적재 완료와 schedule 활성화는 별도 작업이며 실제 상태는 [운영 상태](../docs/operational-status.md)를 봅니다.

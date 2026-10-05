@@ -480,8 +480,14 @@ def test_profile_reports_all_domains_and_no_schema(tmp_path, payload):
     assert "structured_region_normalization_needs_decision" in summary["blockers"]
     output = tmp_path / ".local" / "profiling"
     output.mkdir(parents=True)
+    docs = tmp_path / "docs"
+    docs.mkdir()
+    guide = docs / "api-field-dictionary.md"
+    guide.write_text("human-owned field guide", encoding="utf-8")
     write_reports(tmp_path, output, summary, selected, Redactor())
-    report = (tmp_path / "docs" / "api-data-profile.md").read_text(encoding="utf-8")
+    assert guide.read_text(encoding="utf-8") == "human-owned field guide"
+    assert sorted(p.name for p in docs.iterdir()) == ["api-field-dictionary.md"]
+    report = (output / "reports" / "api-data-profile.md").read_text(encoding="utf-8")
     assert "## 20." in report
     assert not (tmp_path / "backend" / "app").exists()
     assert (output / "manual-review-offline-test.csv").exists()
@@ -489,6 +495,6 @@ def test_profile_reports_all_domains_and_no_schema(tmp_path, payload):
 
 def test_pending_reports_do_not_claim_observations(tmp_path):
     pending_reports(tmp_path)
-    report = (tmp_path / "docs" / "api-data-profile.md").read_text(encoding="utf-8")
+    report = (tmp_path / ".local/profiling/reports/api-data-profile.md").read_text(encoding="utf-8")
     assert "NOT MEASURED" in report
     assert "Pending live" in report

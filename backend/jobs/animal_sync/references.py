@@ -184,11 +184,8 @@ def analyze_references(rows, cache, *, today, redactor=None, progress=None, sour
         "status_policy": status,
         "cache": dict(cache.stats),
         "blockers": blockers,
-        "launch_decisions_still_pending": [
-            "size thresholds",
-            "age thresholds",
-            "animals_active definition",
-        ],
+        "analysis_scope": "Reference diagnostics do not change current API groups, "
+        "tag rules, or the active-dog visibility policy.",
     }
 
 
@@ -242,7 +239,7 @@ def main(argv=None):
         )
         from .reports import write_reference_report
 
-        write_reference_report(ROOT, result)
+        write_reference_report(ROOT, result, output_dir=raw.parent)
         print(
             json.dumps(
                 {

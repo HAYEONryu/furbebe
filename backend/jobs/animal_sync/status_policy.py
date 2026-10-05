@@ -56,5 +56,5 @@ def profile_status(rows, *, today: date):
         "issues": dict(issues),
         "note": "User-defined display label, not a new upstream state or shelter confirmation. "
         "noticeEdt and happenDt do not replace noticeSdt. Source payload unchanged. "
-        "animals_active remains a separate launch decision.",
+        "Public reads require an active dog; the source state is preserved.",
     }

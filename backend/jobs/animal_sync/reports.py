@@ -27,33 +27,31 @@ SECTIONS = [
     "DB 설계에 미치는 영향",
     "Tag 설계에 미치는 영향",
     "Frontend UX에 미치는 영향",
-    "Phase 2 진행 전 결정 필요사항",
+    "분석 품질 이슈와 후속 확인",
 ]
 DECISIONS = {
-    "Animal unique key": "Retain source + desertionNo; no authoritative conflict winner selected.",
-    "Dog filtering": "Content metrics: exact upKindNm=개. Report unresolved species separately.",
-    "Weight normalization": "Strict decimal (Kg) parser; unknown remains null; report anomalies.",
-    "Age normalization": "Retain birth_year and age_text; no exact birthday or attained-age claim.",
-    "Sex mapping": "Public male/female/unknown fixed; source mapping awaits observed values.",
-    "Neuter mapping": "Public yes/no/unknown fixed; source mapping awaits observed values.",
-    "processState handling": "For raw processState=보호중 only: today-noticeSdt >= 10 calendar days "
-    "displays 입양 가능; earlier dates display 보호중. Other source states remain unchanged. "
-    "Preserve the raw source value.",
-    "Region source/mapping": "Use sido_v2.orgCd as upr_cd and sigungu_v2.orgCd as org_cd. "
-    "Join organization names exactly after whitespace normalization; unresolved names remain "
-    "data-quality findings.",
-    "Main image policy": "First valid popfile1..8 URL, source order and animal-level deduplication.",
-    "Meaningful text policy": "Separate empty/placeholder/admin/descriptive/health/behavior/mixed. "
-    "Short-text and evidence flags overlap for words like 순함/경계; "
-    "record both, without choosing production eligibility.",
-    "Personality trait eligibility": "Keywords are candidates, not tags. Negation and context "
-    "require human review; specialMark existence is insufficient.",
-    "Health text handling": "Preserve source evidence, no diagnoses. 없음 can express a negative "
-    "finding; a placeholder count does not rewrite source text.",
-    "Adoption promotion storage": "Preserve raw fields. Later API uses fixed nullable object shape.",
-    "Size group thresholds": "5/10/20kg remain proposals pending measured distribution.",
-    "Age group thresholds": "0–1/2–4/5–8/9+ remain proposals pending measured distribution.",
-    "animals_active definition": "Definition and launch field presence require source status review.",
+    "Animal unique key": "source + desertionNo. Conflicting snapshots in a sync fail safely.",
+    "Dog filtering": "New sync inserts only normalized dogs in source state 보호중 or 입양 가능.",
+    "Weight normalization": "Strict decimal (Kg) parser; negative/unparsed values remain null.",
+    "Age normalization": "Parse YYYY(년생) or YYYY(60일미만)(년생); preserve age_text.",
+    "Sex mapping": "M→male, F→female, Q→unknown; other values normalize to null.",
+    "Neuter mapping": "Y→yes, N→no, U→unknown; other values normalize to null.",
+    "processState handling": "For 보호중, KST today-notice_start >= 10 calendar days displays "
+    "입양 가능. Preserve the source state; invalid/missing/future dates do not qualify.",
+    "Region source/mapping": "Reference analysis uses official parent-scoped code catalogs. "
+    "The read API separately joins normalized orgNm against app/data/regions.json.",
+    "Main image policy": "First valid popfile1..8 URL; source order, deduplication, active rows.",
+    "Meaningful text policy": "Trim and normalize standalone placeholders to null; preserve "
+    "source sentences. Candidate coverage does not establish production tag correctness.",
+    "Personality trait eligibility": "Six released v3 rules produce five behavior keys. "
+    "Negation, uncertainty, administrative and temporary contexts abstain; no fallback.",
+    "Health text handling": "Preserve meaningful source descriptions; no diagnosis tags.",
+    "Adoption promotion storage": "Preserve raw fields; serialize a nullable detail object.",
+    "Size group thresholds": "API: <=5 tiny, >5..10 small, >10..20 medium, >20 large. "
+    "Current-size tags use <5, <10, <20, >=20; exploratory distributions do not change either.",
+    "Age group thresholds": "API: year-based 0..1 puppy, 2..4 young, 5..9 adult, 10+ senior.",
+    "Visibility policy": "Public reads require dog and is_active=true. Normal sync archives "
+    "previously stored excluded animals and obsolete source images/rule tags; no deletion.",
 }
 
 
@@ -105,7 +103,7 @@ def measured_overview(summary):
         "not an exhaustive population census.\n"
         "- Human review notes are blank. Region code mapping and the 10-calendar-day "
         "protecting-status display policy are decided; unresolved joins remain data-quality "
-        "findings. No Phase 2 implementation.\n\n"
+        "findings. Profiling does not write domain data.\n\n"
     )
     output += (
         "### 결과 해석\n\n"
@@ -117,8 +115,8 @@ def measured_overview(summary):
         f"{summary['dates']['consistency']['happenDt<=noticeEdt']['violations']:,}건, "
         f"품종명과 전체 품종명 문자열 불일치 {summary['breed']['kind_full_inconsistent']:,}건을 "
         "보존했습니다. 문자열 불일치가 동물종 판별 오류를 뜻하지는 않습니다.\n"
-        "- 행동 후보 coverage는 후보 문장의 존재 비율입니다. 30–60% 구간은 명세의 "
-        "선택적 trait 탐색 검토 구간이며, 검토 없이 성격 태그를 부여할 근거가 아닙니다.\n"
+        "- 행동 후보 coverage는 후보 문장의 존재 비율이며 현재 공개 생성기의 정확도나 "
+        "태그 부여 근거를 뜻하지 않습니다.\n"
         "- 입양 홍보 문구는 개별 동물 설명인지 보호소 공통 안내인지 확인해야 합니다. "
         "낮은 coverage는 계약의 nullable adoption_promotion을 유지할 근거입니다.\n"
         "- 이미지 URL의 HTTP/HTTPS 분포와 실제 브라우저 표시 가능성은 별개입니다. "
@@ -157,96 +155,39 @@ def decision_evidence(title, summary):
             "note": observations.get("proposal_note"),
         },
         "Age group thresholds": observations.get("proposed_age_groups"),
-        "animals_active definition": {
-            "protecting_only_candidate": observations.get(
-                "animals_active_candidate_protecting_only"
-            ),
-            "adoption_eligibility_established": False,
+        "Visibility policy": {
+            "public_species": "dog",
+            "public_requires_active": True,
+            "new_source_states": ["보호중", "입양 가능"],
+            "normal_sync_deletes": False,
         },
     }
     return sources.get(title)
 
 
 def decisions_text(summary=None):
-    output = """# API profiling decisions
+    output = """# 원천 분석과 현재 구현 정책
 
-Scope: Phase 0–1 only. Size, age, and animals_active decisions remain pending unless explicitly confirmed.
-
-## Governing sources and confirmed chat decisions
-
-HTTP contract: FURBEBE_FASTAPI_V1_CONTRACT.md.
-Profiling methodology/blockers: FURBEBE_CODEX_PHASE0_1_DATA_PROFILING_SPEC.md.
-Stack/architecture/prohibitions: CODEX_FURBEBE_DEVELOPMENT_INSTRUCTIONS.md.
-Later explicit chat decisions override these documents.
-
-- Similar limit: default 4, min 1, max 12. Four is the current UI default.
-- List: sido, sigungu, size_group. No region/size aliases.
-- Raw region display is presentation only, not proof of reliable structured normalization.
-- Region codes: `sido_v2.orgCd` is `upr_cd`; `sigungu_v2.orgCd` is `org_cd`.
-- Status display: raw `processState=보호중` becomes `입양 가능` when
-    `today - noticeSdt >= 10` calendar days; otherwise it remains `보호중`.
-- Evaluate calendar dates in Asia/Seoul; exactly day 10 qualifies. Other source states remain
-  unchanged. Invalid/missing/future noticeSdt does not produce 입양 가능 and is reported.
-- Reference lookup APIs: sido_v2, sigungu_v2, kind_v2, shelter_v2, using HTTPS.
-  Cache successful catalogs by their parent query codes. Fetch only absent catalogs or
-  unknown codes; repeated absent-code checks are limited to once per day.
-- Minimum 5,000 unique animals. The exception requires the true entire population below
-  5,000, stable totalCount, and exhaustive collection. Report total/raw/unique/duplicates.
-- Only size thresholds, age thresholds, region normalization, processState UI semantics,
-  and animals_active may be proposed for launch adjustment. Other JSON shapes stay fixed.
-- Preserve Frontend → FastAPI → SQLAlchemy → PostgreSQL; no frontend direct DB access.
-
-"""
-    if summary is not None:
-        output += """## Launch 전 검토 범위 — 현재 확정되지 않은 항목
-
-| 항목 | 실데이터에 따른 제안 | 확정 상태 |
-|---|---|---|
-| size_group | 초기 5/10/20kg 경계 유지 후보. 원문 파싱과 0kg·극단값의 품질 판정은 분리한다. | 미확정; 아래 분포 비교 |
-| age_group | 초기 0–1/2–4/5–8/9+ 경계 유지 후보. 정확한 만 나이로 표시하지 않는다. | 미확정; 아래 분포 |
-| region | `sido_v2.orgCd`를 `upr_cd`, `sigungu_v2.orgCd`를 `org_cd`로 사용한다. 매칭되지 않는 동물은 여전히 blocker로 보고한다. | **정책 확정 / 연결 결과 별도 검증** |
-| processState UI | 원문 `processState`가 `보호중`이고 `today - noticeSdt >= 10`일이면 `입양 가능`, 아니면 `보호중`으로 표시한다. 원문은 보존한다. | **확정** |
-| animals_active | raw processState=보호중 건수는 비교 후보일 뿐이다. 포함/제외 조건과 launch 필드 존재 여부 확정 필요. | processState 결정에 종속 |
-
-그 밖의 endpoint, query, validation, JSON shape는 변경하지 않았습니다.
-기존 계약의 process_state 원문 표시 원칙과 이번 사용자 표시 규칙의 차이는 최신 채팅 결정으로 해소합니다.
-원본 processState와 계산된 표시 상태를 분리해 보존하며, FastAPI endpoint는 아직 구현하지 않습니다.
-키워드 수동 검토와 updTm 시간대 확인도 남아 있습니다.
-아래 Chosen 중 proposal/pending 표기는 검토 대상으로 기록한 것이며, 위에서 확정한 지역/상태 정책과 구분합니다.
+이 파일은 실행별 분석 보조 보고서입니다. 안내 문서는 저장소 docs에서 관리합니다.
+분석은 도메인 DB나 공개 생성 규칙을 변경하지 않습니다.
+실제 태그 규칙은 docs/tag-generation.md, API 계약은 docs/api-contract.md,
+수집과 보존 정책은 docs/sync-design.md를 기준으로 확인합니다.
+표본 통계와 exploratory 분류는 현재 서비스 경계를 대신하지 않습니다.
 
 """
     evidence = "No live measurement yet." if summary is None else "Run " + summary["run"]["run_id"]
     for title, choice in DECISIONS.items():
         measured = json_block(decision_evidence(title, summary)) if summary is not None else ""
-        if summary is not None and title == "Age normalization":
-            choice = (
-                "Extract birth_year from observed YYYY(년생) and YYYY(60일미만)(년생) "
-                "forms. Retain age_text and do not infer a birthday. Empty year stays null."
-            )
-        if summary is not None and title == "Sex mapping":
-            choice = "Source mapping proposal: M→male, F→female, Q→unknown; preserve raw values. Public enum unchanged."
-        if summary is not None and title == "Neuter mapping":
-            choice = "Source mapping proposal: Y→yes, N→no, U→unknown; preserve raw values. Public enum unchanged."
-        if summary is not None and title == "Size group thresholds":
-            choice = "Measured 5/10/20kg boundaries remain a launch proposal. Zero-weight null policy and extreme-value handling need review; no production threshold or normalizer changed."
-        if summary is not None and title == "Age group thresholds":
-            choice = "Measured approximate year-based 0–1/2–4/5–8/9+ groups remain a launch proposal. No exact attained age or production rule finalized."
-        output += (
-            f"## {title}\n\nDecision: {title}\n\nEvidence: {evidence}\n{measured}\n"
-            f"Chosen: {choice}\n\n"
-            "Rejected alternatives: fabricated defaults, unmeasured production mappings, "
-            "or contract changes outside the approved scope.\n\n"
-            "Reason: retain source uncertainty and the latest user decisions.\n\n"
-            "Revisit when: live results, source documentation or human review supplies evidence.\n\n"
-        )
+        output += f"## {title}\n\nCurrent implementation: {choice}\n\n"
+        output += f"Measurement: {evidence}\n{measured}\n"
     return output
 
 
 def pending_reports(root, reason="API key or live data not available"):
-    docs = root / "docs"
+    docs = root / ".local" / "profiling" / "reports"
     docs.mkdir(parents=True, exist_ok=True)
     output = "# API data profile\n\nStatus: NOT MEASURED — " + reason + ".\n\n"
-    output += "No fixture counts are represented as live data. No Phase 1 completion claim.\n"
+    output += "No fixture counts are represented as live data.\n"
     for i, name in enumerate(SECTIONS, 1):
         output += f"\n## {i}. {name}\n\nPending live collection / analysis.\n"
     (docs / "api-data-profile.md").write_text(output, encoding="utf-8")
@@ -281,7 +222,7 @@ def write_reports(root, output_dir, summary, selected, redactor):
                 }
             )
     export_review(output_dir / f"manual-review-{stamp}.csv", selected, redactor)
-    docs = root / "docs"
+    docs = output_dir / "reports"
     docs.mkdir(parents=True, exist_ok=True)
     columns = [
         "field",
@@ -340,17 +281,17 @@ def write_reports(root, output_dir, summary, selected, redactor):
             "repeated_discovery_groups": summary["repeated_discovery_groups"],
         },
         summary["manual_review"],
-        "Preserve source values and nullable fields. No schema/UPSERT implemented. Review identity.",
-        "Behavior/health/admin are separate candidates. Human review pending; no production tags.",
+        "Profiling does not write DB rows. Domain schema and sync UPSERT are maintained separately.",
+        "Behavior/health/admin are analysis candidates, not the released tagger output.",
         {
             "project_thresholds_not_source_facts": summary["project_thresholds_not_source_facts"],
             "note": "Coverage is not correctness. No fabricated missing-data values.",
         },
-        {"blockers": summary["blockers"], "next": "Report unresolved decisions; no Phase 2."},
+        {"blockers": summary["blockers"], "next": "Resolve analysis quality issues separately."},
     ]
     profile = "# API data profile\n\nRun: " + stamp + ".\n\n"
     profile += (
-        "Status: BLOCKED / decisions pending.\n" if summary["blockers"] else "Status: collected.\n"
+        "Status: analysis quality issues remain.\n" if summary["blockers"] else "Status: collected.\n"
     )
     profile += "\n" + measured_overview(summary)
     for i, (name, data) in enumerate(zip(SECTIONS, sections, strict=True), 1):
@@ -384,14 +325,14 @@ def write_reports(root, output_dir, summary, selected, redactor):
     (docs / "api-profiling-decisions.md").write_text(decisions_text(summary), encoding="utf-8")
 
 
-def write_reference_report(root, result):
+def write_reference_report(root, result, *, output_dir=None):
     region = result["region"]
     missing_breed = sum(sum(v["missing_code_counts"].values()) for v in result["breed"].values())
     missing_shelter = result["shelter"]["missing_careRegNo_counts"]
     output = f"""# 공식 참조 코드·상태 정책 검증
 
 동물 run: {result["animal_run_id"]}; 상태 분석 기준일: {result["as_of_date"]} (Asia/Seoul).
-범위: Phase 0–1. FastAPI endpoint 및 DB schema 구현 없음.
+범위: 해당 capture의 참조 코드 분석. 서비스 DB·API 구현과 별도의 조사입니다.
 
 ## 최신 결정과 측정 결과
 
@@ -424,7 +365,7 @@ JSON 원문은 `.local/profiling/` 밖으로 저장하지 않으며 키를 로�
 
 """
     output += json_block(result)
-    output += "\n## 남은 launch 결정\n\nsize/age 경계와 animals_active 정의는 별도 결정입니다. 수동 검토 의견은 자동 작성하지 않습니다.\n"
-    docs = root / "docs"
+    output += "\n## 해석 범위\n\n분석 결과는 현재 API 그룹·태그 규칙을 변경하지 않습니다. 수동 검토 의견은 자동 작성하지 않습니다.\n"
+    docs = (output_dir or root / ".local" / "profiling" / "reference-data") / "reports"
     docs.mkdir(parents=True, exist_ok=True)
     (docs / "api-reference-data-profile.md").write_text(output, encoding="utf-8")

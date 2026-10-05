@@ -201,7 +201,8 @@ def test_reference_offline_report_does_not_claim_complete_catalogs(tmp_path):
     assert result["status_policy"]["display_state_frequencies"] == {"입양 가능": 1}
     result["animal_run_id"] = "synthetic"
     write_reference_report(tmp_path, result)
-    assert (tmp_path / "docs/api-reference-data-profile.md").exists()
+    assert (tmp_path / ".local/profiling/reference-data/reports/api-reference-data-profile.md").exists()
+    assert not (tmp_path / "docs").exists()
 
 
 def test_reference_result_from_another_capture_cannot_clear_blockers():

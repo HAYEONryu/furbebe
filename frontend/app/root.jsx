@@ -10,6 +10,12 @@ export function Layout({ children }) {
       <meta charSet="utf-8" />
       <meta name="viewport" content="width=device-width, initial-scale=1" />
       <meta name="theme-color" content="#F6F0E4" />
+      <meta name="google-adsense-account" content="ca-pub-5519731659948026" />
+      <script
+        async
+        src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5519731659948026"
+        crossOrigin="anonymous"
+      />
       <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
       <Meta /><Links />
     </head>

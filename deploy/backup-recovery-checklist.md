@@ -1,18 +1,21 @@
-# Supabase backup / recovery checklist
+# 백업·복구 점검표
 
-Account/project plan has not been inspected. Do not assume DEV/PROD plan, available backup or PITR. Complete the following against the actual production Dashboard before approving migration/sync.
+구체적인 절차는 [운영 매뉴얼](../docs/operations.md)을 따릅니다.
+목표: 매일+schema 변경 직전 / 30일 보관 / RPO 24시간 / RTO 4시간.
+자동화·외부 보관·실제 복구 시간은 증거로 확인합니다.
 
-- [ ] Record PROD project identity, region, plan/compute and database version; ensure it differs from DEV.
-- [ ] Dashboard Database > Backups: record which backups exist, latest successful timestamp, retention window and restore controls. Verify whether logical/physical backups and downloadable exports are available.
-- [ ] If Free: arrange periodic logical off-site exports; do not assume paid-plan managed backups. If paid: verify actual daily backup retention. PITR is a separately priced option, not automatically assumed.
-- [ ] Set owner, backup cadence, retention, RPO/RTO and restore authority. Initial proposal: daily encrypted off-site logical export + an additional verified export before schema changes; accept the implied up-to-24-hour data-loss window or choose a tighter policy.
-- [ ] Export schema, data, required roles/grants, Alembic revision and relevant non-DB settings. Use native PostgreSQL pg_dump/pg_restore or supported Supabase CLI with a matching client version. Do not place DB URI/password in shell tracing, chat, command artifacts or public logs.
-- [ ] Store encrypted off-site copies with separate restricted access and a tested retention policy. Verify checksum, archive readability and secure key access.
-- [ ] Understand scope: database backup does not restore external protection-center photos or Supabase Storage object contents. No hosted image copies are created by this app. Account/API/secret configuration also requires a separate inventory.
-- [ ] Rehearse restore into a separate disposable project/DB. Check six domain tables, row counts, FK/indexes, Alembic revision, health/list/detail/filter/similar and sync idempotency. Record elapsed time and data freshness. Never rehearse destructive restore on live PROD.
-- [ ] Before production schema changes: save verified backup identifier/checksum, restore result, current/target revision and operator-approved recovery instructions.
-- [ ] Incident: stop new sync writes, preserve logs, choose a restore timestamp, obtain destructive-operation approval, restore to a separate target where possible, verify data, then switch approved secret/revision and resume traffic/sync. Record missing-data window and reconcile source records.
+- [ ] PROD project·DB version·현재 revision·실제 plan 확인.
+- [ ] Dashboard backup/PITR 가용성과 retention 확인.
+- [ ] public schema 데이터와 alembic_version export, 역할·권한·비DB 설정 별도 inventory.
+- [ ] 서버와 호환되는 pg_dump, 인증정보가 command/log에 없음.
+- [ ] archive 읽기·checksum·암호화 왕복 검증.
+- [ ] 비공개 offsite archive, 별도 key custody, 접근·보관 기간 확인.
+- [ ] 생성 전 빈 schema backup과 적재된 데이터 backup을 구분.
+- [ ] 새 disposable DB restore rehearsal, schema 충돌의 TOC 검토.
+- [ ] 테이블·행수·FK/중복/index·revision·API·격리 sync 재실행 확인.
+- [ ] 실제 복구 시간·데이터 freshness·operator와 결과 기록.
+- [ ] 복구 시 writer/schedule 중지, 별도 target 검증 후 전환 계획.
+- [ ] schema downgrade를 자동 rollback으로 사용하지 않음.
+- [ ] 외부 사진·Storage object·secret/DNS/IAM 제외 범위를 설명.
 
-Migration downgrade is not a backup. Current `20260915_0001` downgrade drops all six domain tables. It cannot recover records and is not an automatic production rollback. Application revision rollback and DB recovery are separate operations.
-
-[Supabase backup documentation](https://supabase.com/docs/guides/platform/backups) describes paid-plan daily backups, Free export guidance, PITR and Storage exclusions. Account-specific availability must be verified in Dashboard. No add-on or paid backup service has been activated.
+실제 최초 backup의 범위와 남은 작업은 [운영 상태](../docs/operational-status.md)에 있습니다.
