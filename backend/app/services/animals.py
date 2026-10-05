@@ -8,6 +8,8 @@ from typing import Annotated
 from fastapi import Depends
 from sqlalchemy.exc import SQLAlchemyError
 
+from backend.app.core.clock import korea_today
+from backend.app.core.source_parsing import nullable_text, parse_date, valid_url
 from backend.app.db.session import Database, DatabaseNotConfigured, get_database
 from backend.app.repositories.animals import PROMOTION_FIELDS, SUMMARY_FIELDS, ReadRepository
 from backend.app.schemas.animals import (
@@ -23,9 +25,6 @@ from backend.app.schemas.animals import (
 from backend.app.services.errors import AnimalNotFound, TagNotFound
 from backend.app.services.health import DatabaseUnavailable
 from backend.app.services.regions import matching_organizations, region_for
-from backend.jobs.animal_sync.normalizer import nullable_text
-from backend.jobs.animal_sync.parsing import parse_date, valid_url
-from backend.jobs.animal_sync.status_policy import korea_today
 
 LABELS = {
     "sexes": {"male": "수컷", "female": "암컷", "unknown": "미상"},

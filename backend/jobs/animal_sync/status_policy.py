@@ -2,19 +2,14 @@
 
 import re
 from collections import Counter
-from datetime import UTC, date, datetime, timedelta, timezone
+from datetime import date
+
+from backend.app.core.clock import KST as KST
+from backend.app.core.clock import korea_today as korea_today
 
 from .field_stats import parse_date
 
-KST = timezone(timedelta(hours=9))
 POLICY_VERSION = "notice-start-10-calendar-days-v1"
-
-
-def korea_today(now: datetime | None = None) -> date:
-    now = now or datetime.now(UTC)
-    if now.tzinfo is None:
-        raise ValueError("An aware clock is required")
-    return now.astimezone(KST).date()
 
 
 def display_status(row, *, today: date):
@@ -39,7 +34,7 @@ def display_status(row, *, today: date):
 
 
 def is_listed_dog(values, *, today: date):
-    """Keep dogs in either selectable state; ended posts stay outside storage."""
+    """Keep dogs in either selectable state; ended posts stay outside public results."""
     return values.get("species") == "dog" and values.get("process_state") in {
         "보호중", "입양 가능"
     }

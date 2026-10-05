@@ -7,6 +7,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Query, Response
 from pydantic import BaseModel, ConfigDict, Field
 
+from backend.app.core.clock import KST
 from backend.app.schemas.animals import (
     AnimalDetailResponse,
     AnimalFilters,
@@ -19,7 +20,6 @@ from backend.app.schemas.animals import (
 )
 from backend.app.schemas.common import ApiErrorResponse
 from backend.app.services.animals import ReadService, get_read_service
-from backend.jobs.animal_sync.status_policy import KST
 
 router = APIRouter(
     prefix="/api/v1", responses={code: {"model": ApiErrorResponse} for code in (404, 422, 503, 500)}

@@ -1,6 +1,6 @@
 import { expect, it, vi } from 'vitest';
-vi.mock('react-router', () => ({ createRequestHandler: () => () => new Response('SSR route') }));
-import worker from '../workers/app.js';
+import { frontendRequest } from '../workers/request.js';
+const worker = { fetch: (request, env) => frontendRequest(request, env, () => new Response('SSR route')) };
 
 it.each(['/dogs?page=2', '/robots.txt', '/assets/app.js'])('redirects www %s before rendering or serving assets', async (path) => {
   const assets = { fetch: vi.fn() };

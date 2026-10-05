@@ -5,9 +5,9 @@ from datetime import datetime, time, timedelta
 
 from sqlalchemy import and_, case, exists, func, literal, not_, or_, select
 
+from backend.app.core.clock import KST
 from backend.app.db.models import Animal, AnimalImage, AnimalTag, Shelter, SyncRun, Tag
 from backend.app.db.session import DatabaseNotConfigured
-from backend.jobs.animal_sync.status_policy import KST
 
 SUMMARY_FIELDS = (
     "id",
