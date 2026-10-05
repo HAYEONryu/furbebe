@@ -67,3 +67,14 @@ API 코드가 jobs를 import하던 Docker runtime 결함을 발견해 parser/clo
 검증: PostgreSQL 17 전용 로컬 DB backend 420 passed/0 skipped, Ruff 통과; frontend 119 tests/ESLint 통과; furbebe.site production client/SSR build 및 Worker dry-run 통과. API-only 소스 복사 runtime에서 jobs 없이 startup, 로컬 DB /health와 read endpoints, production CORS/DEV 거부/docs off 통과. 실제 Docker/Cloud Run runtime 검증을 대신하지는 않는다. 상세 sitemap은 live API 준비 후 생성해야 하며 현재는 /와 /dogs만 있다.
 
 Production DB migration/sync/deployment/DNS 변경 없음. 실제 외부 백업/키 보관 위치와 API HTTPS 연결 방식(Load Balancer 또는 대체안)이 미선택이다. 비용은 산정 후 승인받아야 한다. 2단계 backup/recovery가 아직 미완료여서 Production migration을 진행하지 않는다. 운영 rollback 불필요.
+
+### 원격 CI / release 준비
+
+Draft PR: https://github.com/HAYEONryu/furbebe/pull/3
+
+53a7855의 GitHub CI에서 backend Python 3.12/3.14 및 Docker build/startup/nonroot/health/CORS/secret-log smoke가 통과했다. Frontend는 URL 상태가 바뀐 직후 DOM commit 전에 확인하는 routes.test.jsx의 비동기 assertion race 1개로 실패했다. DOM 갱신과 URL 조건을 같은 waitFor에서 확인하도록 수정했다. 최종 CI 상태는 최신 commit의 결과로 확인해야 한다. PR은 merge하지 않았다.
+
+GitHub Environment 조회 결과는 빈 목록이며 PRODUCTION_SYNC_ENABLED repository variable도 발견되지 않았다. 운영 sync는 활성화하지 않았다.
+
+0004 이전 checksum: 6a558941c3947272fdcb1ba4bdc33770fe6f0669906f143e62f34c4d92cfae72
+0004 데이터 보존 수정 checksum: bc9ad9192d9b9f82e77b07ccf8d7ad7cbda8a6467a441ee8f0327679ab96d449

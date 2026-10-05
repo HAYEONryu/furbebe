@@ -205,6 +205,8 @@ it('clears an applied protection state to all instead of resetting to the same s
   const router = routeTest('/dogs');
   const remove = await screen.findByRole('button', { name: '상태: 입양 가능 조건 해제' });
   await userEvent.setup().click(remove);
-  await waitFor(() => expect(new URLSearchParams(router.state.location.search).get('process_state')).toBe('all'));
-  expect(screen.queryByRole('button', { name: '상태: 입양 가능 조건 해제' })).not.toBeInTheDocument();
+  await waitFor(() => {
+    expect(new URLSearchParams(router.state.location.search).get('process_state')).toBe('all');
+    expect(screen.queryByRole('button', { name: '상태: 입양 가능 조건 해제' })).not.toBeInTheDocument();
+  });
 });
