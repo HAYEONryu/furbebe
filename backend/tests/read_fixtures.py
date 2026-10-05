@@ -13,7 +13,7 @@ NOW = datetime(2026, 9, 16, 3, tzinfo=UTC)
 KST_START = datetime(2026, 9, 15, 15, tzinfo=UTC)
 SENTINEL = "PRIVATE_RAW_ONLY_FIXTURE"
 WEIGHTS = [0, 5, "5.01", 10, "10.01", 20, "20.01", None]
-YEARS = [2026, 2025, 2024, 2022, 2021, 2018, 2017, None]
+YEARS = [2026, 2025, 2024, 2022, 2021, 2018, 2016, None]
 
 
 def seed(connection):

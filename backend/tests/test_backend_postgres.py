@@ -54,7 +54,7 @@ def test_alembic_upgrade_downgrade_upgrade_and_metadata_match(postgres_settings)
                     "Roundtrip requires empty domain tables in a disposable test database"
                 )
         command.check(config)
-        command.downgrade(config, "-1")
+        command.downgrade(config, "base")
         assert inspect(database.engine).get_table_names() == ["alembic_version"]
         with database.session() as session:
             assert session.execute(text("SELECT count(*) FROM alembic_version")).scalar() == 0
@@ -71,6 +71,6 @@ def test_alembic_upgrade_downgrade_upgrade_and_metadata_match(postgres_settings)
         with database.session() as session:
             assert session.execute(
                 text("SELECT version_num FROM alembic_version")
-            ).scalar_one() == ("20260915_0001")
+            ).scalar_one() == ("20261003_0003")
     finally:
         database.dispose()

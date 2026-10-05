@@ -84,7 +84,7 @@ class AnimalQueries:
             (Animal.birth_year.is_(None), "unknown"),
             (age <= 1, "puppy"),
             (age <= 4, "young"),
-            (age <= 8, "adult"),
+            (age <= 9, "adult"),
             else_="senior",
         )
         self.state = case(
@@ -130,7 +130,7 @@ class AnimalQueries:
             )
             .join(Tag, Tag.key == AnimalTag.tag_key)
             .join(Animal, Animal.id == AnimalTag.animal_id)
-            .where(Tag.is_active.is_(True), or_(not_(age_rule), fresh))
+            .where(Tag.is_active.is_(True), AnimalTag.is_active.is_(True), or_(not_(age_rule), fresh))
             .cte("ranked_tags")
         )
         return select(ranked).where(ranked.c.position == 1).cte("visible_tags")
@@ -165,7 +165,7 @@ class AnimalQueries:
         return set(self.connection.scalars(select(Tag.key).where(Tag.key.in_(keys))))
 
     def predicates(self, filters, *, organizations=None):
-        conditions = []
+        conditions = [Animal.species == "dog", Animal.is_active.is_(True)]
         if organizations is not None:
             conditions.append(self.organization.in_(organizations))
         for name in ("breed", "sex", "neutered"):
@@ -190,6 +190,7 @@ class AnimalQueries:
             )
             conditions.append(
                 or_(
+                    Animal.notice_no.ilike(pattern, escape="\\"),
                     Animal.breed.ilike(pattern, escape="\\"),
                     self.organization.ilike(pattern, escape="\\"),
                     shelter_match,
@@ -240,7 +241,9 @@ class AnimalQueries:
 
     def animal(self, animal_id):
         return (
-            self.connection.execute(self.projection(detail=True).where(Animal.id == animal_id))
+            self.connection.execute(
+                self.projection(detail=True).where(Animal.id == animal_id, Animal.species == "dog", Animal.is_active.is_(True))
+            )
             .mappings()
             .one_or_none()
         )
@@ -255,7 +258,7 @@ class AnimalQueries:
                 AnimalImage.image_url,
                 AnimalImage.image_type,
             )
-            .where(AnimalImage.animal_id.in_(animals), AnimalImage.image_type.in_(IMAGE_TYPES))
+            .where(AnimalImage.animal_id.in_(animals), AnimalImage.image_type.in_(IMAGE_TYPES), AnimalImage.is_active.is_(True))
             .order_by(
                 AnimalImage.animal_id,
                 AnimalImage.sort_order,
@@ -318,7 +321,7 @@ class AnimalQueries:
             self.connection.execute(
                 self.projection()
                 .outerjoin(shared_counts, shared_counts.c.animal_id == Animal.id)
-                .where(Animal.id != source["id"])
+                .where(Animal.id != source["id"], Animal.species == "dog", Animal.is_active.is_(True))
                 .order_by(score.desc(), *self.sort_columns("recent"))
                 .limit(limit)
             )
@@ -350,14 +353,14 @@ class AnimalQueries:
         # One grouped query computes all scalar facets; no per-animal lookups.
         grouped = select(
             *[column.label(name) for name, column in columns.items()], func.count().label("count")
-        ).group_by(*columns.values())
+        ).where(Animal.species == "dog", Animal.is_active.is_(True)).group_by(*columns.values())
         return self.connection.execute(grouped).mappings().all()
 
     def overview(self):
         start = datetime.combine(self.today, time.min, KST)
         has_image = exists(
             select(AnimalImage.id).where(
-                AnimalImage.animal_id == Animal.id, AnimalImage.image_type.in_(IMAGE_TYPES)
+                AnimalImage.animal_id == Animal.id, AnimalImage.image_type.in_(IMAGE_TYPES), AnimalImage.is_active.is_(True)
             )
         )
         last_sync = (
@@ -379,7 +382,7 @@ class AnimalQueries:
                     .label("new_today"),
                     func.count().filter(has_image).label("with_primary_image"),
                     last_sync.label("last_synced_at"),
-                ).select_from(Animal)
+                ).select_from(Animal).where(Animal.species == "dog", Animal.is_active.is_(True))
             )
             .mappings()
             .one()

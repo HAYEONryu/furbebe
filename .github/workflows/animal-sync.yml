@@ -1,0 +1,45 @@
+name: Animal Sync
+
+on:
+  workflow_dispatch:
+    inputs:
+      rebuild_tags:
+        description: Reset tag dictionary and assignments from stored animals before sync
+        type: boolean
+        default: false
+  schedule:
+    # Asia/Seoul: 00:00 and 12:00
+    - cron: '0 3,15 * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: animal-sync-dev
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      APP_ENV: development
+      DATA_GO_KR_SERVICE_KEY: ${{ secrets.DATA_GO_KR_SERVICE_KEY }}
+      DATABASE_URL_dev: ${{ secrets.DATABASE_URL_DEV }}
+      SUPABASE_URL_dev: ${{ secrets.SUPABASE_URL_DEV }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: python -m pip install -r backend/requirements.txt
+      - name: Rebuild tags when explicitly requested
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.rebuild_tags }}
+        run: python -m backend.jobs.rebuild_tags --target supabase-dev --apply
+      - name: Collect animals into DEV database
+        run: python -m backend.jobs.animal_sync.main --database-target supabase-dev --full --page-size 1000 --batch-size 500

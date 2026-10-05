@@ -1,3 +1,4 @@
+import { pageMeta } from '../services/seo.js';
 import { Link } from 'react-router';
 import { ButtonLink } from '../components/button.jsx';
 import { AnimalImage } from '../components/animal-image.jsx';
@@ -8,7 +9,7 @@ import { getDiscovery } from '../services/discovery.js';
 import { loadRoute } from '../services/route-loader.js';
 export { RouteError as ErrorBoundary } from '../components/route-error.jsx';
 
-export function meta() { return [{ title: 'FURBEBE · Find Your Forever' }, { name: 'description', content: '가족을 기다리는 아이와, 아이를 기다리는 가족의 인연을 이어드립니다. 구조동물의 소식을 만나보세요.' }]; }
+export function meta({ data } = {}) { return pageMeta({ title: 'FURBEBE · Find Your Forever', description: '가족을 기다리는 아이와, 아이를 기다리는 가족의 인연을 이어드립니다. 구조동물의 등록 정보와 보호소 소식을 만나보세요.', path: '/', noindex: !data }); }
 export function loader({ request }) { return loadRoute(() => getDiscovery({ signal: request.signal, home: true })); }
 
 export default function Home({ loaderData }) {
@@ -24,7 +25,7 @@ export default function Home({ loaderData }) {
       <div className="hero-visual">
         <div className="hero-note">반가워요, 나의 새로운 가족.</div>
         <figure className="hero-photo">
-          <AnimalImage src={featured?.primary_image?.url} alt={featured ? `${featured.breed || '구조동물'}의 보호소 등록 사진` : '아직 등록된 사진이 없어요.'} priority />
+          <AnimalImage src={featured?.primary_image?.url} sources={(featured?.image_candidates ?? []).map((image) => image.url)} alt={featured ? `${featured.breed || '구조동물'}의 보호소 등록 사진` : '아직 등록된 사진이 없어요.'} priority />
           <figcaption><span><strong>{featured?.breed || '따뜻한 만남을 기다려요'}</strong><span className="mt-1 block text-xs text-muted">{featured?.region.display || '아이들의 소식을 만나보세요.'}</span></span>{featured && <Link className="hero-photo-link" to={`/dogs/${featured.id}`} aria-label="소개된 아이 자세히 보기">↗</Link>}</figcaption>
         </figure>
       </div>

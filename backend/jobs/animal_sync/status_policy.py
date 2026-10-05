@@ -38,6 +38,13 @@ def display_status(row, *, today: date):
     return result
 
 
+def is_listed_dog(values, *, today: date):
+    """Keep dogs in either selectable state; ended posts stay outside storage."""
+    return values.get("species") == "dog" and values.get("process_state") in {
+        "보호중", "입양 가능"
+    }
+
+
 def profile_status(rows, *, today: date):
     states, issues = Counter(), Counter()
     for row in rows:

@@ -103,6 +103,7 @@ class AnimalSummaryResponse(BaseModel):
     notice_end: date | None
     region: RegionResponse
     primary_image: ImageResponse | None
+    image_candidates: list[ImageResponse] = Field(default_factory=list)
     tags: list[TagAssignmentResponse]
 
 

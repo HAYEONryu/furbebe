@@ -1,4 +1,4 @@
-import { act, render, screen, within } from '@testing-library/react';
+import { waitFor, act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider, useLoaderData } from 'react-router';
 import { afterEach, expect, it, vi } from 'vitest';
@@ -65,7 +65,10 @@ it('navigates Main discovery using API option values', async () => {
   await user.selectOptions(screen.getByLabelText('크기'), 'tiny');
   await user.click(screen.getByRole('button', { name: '친구 찾아보기' }));
   await screen.findByRole('heading', { name: '어쩌면, 나의 가족' });
-  expect(router.state.location.search).toBe('?sido=5690000&size_group=tiny');
+  const query = new URLSearchParams(router.state.location.search);
+  expect(query.get('sido')).toBe('5690000');
+  expect(query.get('size_group')).toBe('tiny');
+  expect(query.get('process_state')).toBe('입양 가능');
 });
 
 it('navigates through list and detail loaders', async () => {
@@ -73,44 +76,49 @@ it('navigates through list and detail loaders', async () => {
   routeTest();
   const user = userEvent.setup();
   await user.click(await screen.findByRole('link', { name: '아이들 찾아보기' }));
+  await screen.findByRole('heading', { name: '어쩌면, 나의 가족' });
   await user.click(await screen.findByRole('link', { name: /테스트 품종.*자세히 보기/ }));
-  expect(await screen.findByRole('heading', { name: '테스트 품종' })).toBeVisible();
+  expect(await screen.findByRole('heading', { name: '테스트 품종', level: 1 })).toBeVisible();
   expect(screen.getByRole('img', { name: '아직 등록된 사진이 없어요.' })).toBeVisible();
 });
 
 it('restores search, tags, sort and pagination with browser back/forward history', async () => {
   mockApi();
-  const router = routeTest('/dogs?q=서울&tag=bean&sort=weight_asc&page=2');
+  const router = routeTest('/dogs?q=서울&tag=white&sort=weight_asc&page=2');
   const user = userEvent.setup();
-  expect(await screen.findByLabelText('품종·보호소·지역 검색')).toHaveValue('서울');
+  expect(await screen.findByLabelText('공고번호·품종·보호소·지역 검색')).toHaveValue('서울');
   expect(screen.getByLabelText('정렬')).toHaveValue('weight_asc');
-  expect(screen.getByRole('button', { name: '콩만이' })).toHaveAttribute('aria-pressed', 'true');
+  expect(screen.getByRole('button', { name: /흰둥이.*조건 해제/ })).toBeVisible();
   await user.selectOptions(screen.getByLabelText('정렬'), 'age_oldest');
   await screen.findByRole('link', { name: '1페이지', current: 'page' });
   expect(router.state.location.search).not.toContain('page=');
   await act(() => router.navigate(-1));
-  expect(screen.getByLabelText('품종·보호소·지역 검색')).toHaveValue('서울');
+  expect(screen.getByLabelText('공고번호·품종·보호소·지역 검색')).toHaveValue('서울');
   expect(screen.getByLabelText('정렬')).toHaveValue('weight_asc');
   expect(screen.getByRole('link', { name: '2페이지' })).toHaveAttribute('aria-current', 'page');
   await act(() => router.navigate(1));
   expect(screen.getByLabelText('정렬')).toHaveValue('age_oldest');
 });
 
-it('keeps filters when changing page and resets page when submitting search', async () => {
+it('keeps filters when paging and resets every filter to all states on search', async () => {
   const fetch = mockApi();
   const router = routeTest('/dogs?size_group=tiny&tag=bean&sort=weight_asc');
   const user = userEvent.setup();
   await user.click(await screen.findByRole('link', { name: '다음 페이지' }));
   expect(await screen.findByRole('link', { name: '2페이지', current: 'page' })).toBeVisible();
-  expect(router.state.location.search).toBe('?size_group=tiny&tag=bean&sort=weight_asc&page=2');
-  await user.type(screen.getByLabelText('품종·보호소·지역 검색'), '서울');
+  const pageQuery = new URLSearchParams(router.state.location.search);
+  expect(Object.fromEntries(pageQuery)).toEqual({ size_group: 'tiny', process_state: '입양 가능', tag: 'bean', sort: 'weight_asc', page: '2' });
+  await user.type(screen.getByLabelText('공고번호·품종·보호소·지역 검색'), '서울');
   await user.click(screen.getByRole('button', { name: '검색' }));
   await screen.findByRole('link', { name: '1페이지', current: 'page' });
   const latest = new URL(fetch.mock.calls.filter(([url]) => new URL(url).pathname.endsWith('/animals')).at(-1)[0]);
   expect(latest.searchParams.get('page')).toBeNull();
   expect(latest.searchParams.get('q')).toBe('서울');
-  expect(latest.searchParams.get('size_group')).toBe('tiny');
-  expect(latest.searchParams.getAll('tag')).toEqual(['bean']);
+  expect(latest.searchParams.get('size_group')).toBeNull();
+  expect(latest.searchParams.get('process_state')).toBeNull();
+  expect(latest.searchParams.getAll('tag')).toEqual([]);
+  expect(latest.searchParams.get('sort')).toBeNull();
+  expect(new URLSearchParams(router.state.location.search).get('process_state')).toBe('all');
 });
 
 it('applies dependent API filters, clears child region and resets page', async () => {
@@ -166,4 +174,37 @@ it('renders invalid animal IDs as 404 without a backend call', async () => {
   routeTest('/dogs/not-an-id');
   expect(await screen.findByRole('heading', { name: '찾으시는 정보를 찾을 수 없어요.' })).toBeVisible();
   expect(fetch).not.toHaveBeenCalled();
+});
+
+it('offers all, protected and adoptable states and defaults and resets to adoptable', async () => {
+  const fetch = mockApi();
+  const router = routeTest('/dogs');
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole('button', { name: /필터/ }));
+  const select = screen.getByLabelText('보호 상태');
+  expect(select).toHaveValue('입양 가능');
+  expect(within(select).getAllByRole('option').map((option) => option.value)).toEqual(['all', '보호중', '입양 가능']);
+  await user.selectOptions(select, '보호중');
+  await user.click(screen.getByRole('button', { name: '선택한 조건 적용' }));
+  await screen.findByRole('button', { name: '상태: 보호중 조건 해제' });
+  expect(new URLSearchParams(router.state.location.search).get('process_state')).toBe('보호중');
+  const latest = new URL(fetch.mock.calls.filter(([url]) => new URL(url).pathname.endsWith('/animals')).at(-1)[0]);
+  expect(latest.searchParams.get('process_state')).toBe('보호중');
+  await user.click(screen.getByRole('button', { name: /필터/ }));
+  expect(screen.getByLabelText('보호 상태')).toHaveValue('보호중');
+  await user.click(screen.getByRole('button', { name: '필터 초기화' }));
+  expect(screen.getByLabelText('보호 상태')).toHaveValue('입양 가능');
+  await user.click(screen.getByRole('button', { name: '선택한 조건 적용' }));
+  await screen.findByRole('button', { name: '상태: 입양 가능 조건 해제' });
+  expect(new URLSearchParams(router.state.location.search).get('process_state')).toBe('입양 가능');
+});
+
+
+it('clears an applied protection state to all instead of resetting to the same state', async () => {
+  mockApi();
+  const router = routeTest('/dogs');
+  const remove = await screen.findByRole('button', { name: '상태: 입양 가능 조건 해제' });
+  await userEvent.setup().click(remove);
+  await waitFor(() => expect(new URLSearchParams(router.state.location.search).get('process_state')).toBe('all'));
+  expect(screen.queryByRole('button', { name: '상태: 입양 가능 조건 해제' })).not.toBeInTheDocument();
 });

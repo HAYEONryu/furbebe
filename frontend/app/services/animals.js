@@ -7,6 +7,7 @@ const FILTERS = new Set(['page', 'page_size', 'sido', 'sigungu', 'breed', 'sex',
 export function animalQuery(input) {
   const query = buildQuery(input);
   for (const key of [...query.keys()]) if (!FILTERS.has(key)) query.delete(key);
+  if (query.get("process_state") === "all") query.delete("process_state");
   return query;
 }
 

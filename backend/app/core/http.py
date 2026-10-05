@@ -1,6 +1,8 @@
 """Safe JSON errors and request IDs, including unhandled failures."""
 
+import json
 import logging
+import time
 from uuid import UUID, uuid4
 
 from fastapi import FastAPI, Request
@@ -27,6 +29,7 @@ def error_response(request, status, code, message, details=None):
 
 class RequestContextMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request, call_next):
+        started = time.perf_counter()
         supplied = request.headers.get("X-Request-ID", "")
         try:
             request.state.request_id = str(UUID(supplied))
@@ -38,6 +41,23 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
             # Exception text, SQL, URL and request contents can carry credentials.
             logger.error("Unhandled request failure request_id=%s", request.state.request_id)
             response = error_response(request, 500, "INTERNAL_ERROR", "Internal server error")
+        route = request.scope.get("route")
+        # Route templates avoid logging arbitrary path/query input or animal IDs.
+        logger.info(
+            json.dumps(
+                {
+                    "event": "http_request",
+                    "request_id": request.state.request_id,
+                    "endpoint": getattr(route, "path", "<unmatched>"),
+                    "method": request.method
+                    if request.method
+                    in {"GET", "HEAD", "OPTIONS", "POST", "PUT", "PATCH", "DELETE"}
+                    else "OTHER",
+                    "status": response.status_code,
+                    "duration_ms": round((time.perf_counter() - started) * 1000, 3),
+                }
+            )
+        )
         response.headers["X-Request-ID"] = request.state.request_id
         return response
 

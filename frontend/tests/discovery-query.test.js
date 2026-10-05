@@ -20,10 +20,10 @@ it.each(['0', '-1', 'bad', '2.5', 'Infinity', '9007199254740992'])('normalizes i
   expect(parseDiscoveryQuery('page=' + page).page).toBe(1);
 });
 
-it('omits defaults and unrelated URL fields, trims values and normalizes unknown sort', () => {
+it('keeps the default protection status and omits unrelated URL fields, trims values and normalizes unknown sort', () => {
   const state = parseDiscoveryQuery('utm_source=x&sort=invalid&q=++&tag=bean&tag=+bean+');
-  expect(discoveryHref(state)).toBe('/dogs?tag=bean');
-  expect(serializeDiscoveryQuery(parseDiscoveryQuery()).toString()).toBe('');
+  expect(new URL(discoveryHref(state), 'https://example.com').searchParams.get('process_state')).toBe('입양 가능');
+  expect(serializeDiscoveryQuery(parseDiscoveryQuery()).get('process_state')).toBe('입양 가능');
 });
 
 it('resets page and clears dependent sigungu on region changes', () => {
@@ -38,4 +38,20 @@ it('resets page and clears dependent sigungu on region changes', () => {
 it('obtains all region names and codes from metadata, including a self-parented city', () => {
   expect(regionOptions(filters, '5690000').sigungu).toEqual([{ value: '5690000', label: '세종특별자치시' }]);
   expect(regionOptions({ regions: [{ sido: 'new', sido_label: '새 지역', sigungu: ['child'], sigungu_labels: { child: '새 구역' } }] }, 'new').sido).toEqual([{ value: 'new', label: '새 지역' }]);
+});
+
+it('maps legacy cloud filters to white without duplicate conditions', () => {
+  const state = parseDiscoveryQuery('?tag=cloud&tag=white&tag_match=all');
+  expect(state.tag).toEqual(['white']);
+  expect(serializeDiscoveryQuery({ ...state, tag: ['cloud', 'white'] }).getAll('tag')).toEqual(['white']);
+});
+
+it('defaults to adoptable and permits only the two supported states', () => {
+  expect(parseDiscoveryQuery().process_state).toBe('입양 가능');
+  expect(parseDiscoveryQuery('?tag=white').process_state).toBe('입양 가능');
+  expect(new URL(discoveryHref({ tag: ['white'] }), 'https://example.com').searchParams.get('process_state')).toBe('입양 가능');
+  const all = { ...parseDiscoveryQuery(), process_state: '' };
+  expect(parseDiscoveryQuery(serializeDiscoveryQuery(all)).process_state).toBe('입양 가능');
+  expect(parseDiscoveryQuery('?process_state=보호중').process_state).toBe('보호중');
+  expect(parseDiscoveryQuery('?process_state=종료(입양)').process_state).toBe('입양 가능');
 });

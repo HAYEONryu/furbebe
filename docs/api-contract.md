@@ -268,10 +268,10 @@ type  "source" | "adoption"
 
 ```json
 {
-  "key": "cautious",
+  "key": "shy",
   "type": "trait",
-  "label": "낯가림",
-  "emoji": "🙈",
+  "label": "소심요정",
+  "emoji": "🧚",
   "confidence": 0.95,
   "evidence": "사람을 매우 경계함"
 }
@@ -734,18 +734,10 @@ Not found:
     {
       "key": "white",
       "type": "fact",
-      "label": "흰색",
-      "emoji": null,
+      "label": "흰둥이",
+      "emoji": "🤍",
       "confidence": 1.0,
       "evidence": "흰색"
-    },
-    {
-      "key": "cloud",
-      "type": "vibe",
-      "label": "구름이",
-      "emoji": "☁️",
-      "confidence": 1.0,
-      "evidence": "white"
     }
   ],
   "descriptions": {
@@ -879,17 +871,17 @@ active_only
 {
   "items": [
     {
-      "key": "cloud",
-      "type": "vibe",
-      "label": "구름이",
-      "emoji": "☁️",
+      "key": "white",
+      "type": "fact",
+      "label": "흰둥이",
+      "emoji": "🤍",
       "description": "흰색 계열의 아이를 위한 탐색 태그"
     },
     {
-      "key": "cautious",
+      "key": "shy",
       "type": "trait",
-      "label": "낯가림",
-      "emoji": "🙈",
+      "label": "소심요정",
+      "emoji": "🧚",
       "description": "제공된 설명에 사람에 대한 경계 표현이 있는 경우"
     }
   ]
@@ -1304,3 +1296,5 @@ FURBEBE FastAPI v1을 첨부 API Contract대로 구현해.
 
 충돌이 있으면 임의로 Contract를 바꾸지 말고 사용자에게 알려.
 ```
+
+목록 및 유사 동물 요약 응답의 `image_candidates`는 순서대로 정렬된 source 사진 목록이다. 프런트엔드는 대표 사진 로딩 실패 시 이 목록의 다음 사진을 시도하고, 모든 후보가 실패하면 국가동물보호정보시스템 공고 확인 안내를 표시한다.

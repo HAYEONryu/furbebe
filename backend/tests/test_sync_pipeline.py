@@ -138,30 +138,28 @@ def test_size_policy_boundaries(weight, expected):
         (2022, "young"),
         (2021, "adult"),
         (2018, "adult"),
-        (2017, "senior"),
+        (2017, "adult"),
+        (2016, "senior"),
     ],
 )
 def test_age_policy_boundaries(birth, expected):
     assert age_group(birth, year=2026) == expected
 
 
-def test_only_structured_facts_and_mapped_vibes_generate():
+def test_color_and_explicit_behavior_tags_generate():
     raw = source_row(
         specialMark="애교 많고 활발하며 질병 있음", sfeSoci="낯가림", sfeHealth="치료 필요"
     )
     tags = generate_tags(
         normalize_animal(ValidatedAnimal.model_validate(raw), today=TODAY), today=TODAY
     )
-    assert {tag.tag_key for tag in tags} == {"tiny", "puppy", "white", "bean", "baby_dog", "cloud"}
-    assert all(tag.evidence and tag.confidence == 1 for tag in tags)
-    assert {row["type"] for row in CATALOG} == {"fact", "vibe"}
-    raw.update(upKindCd="422400", upKindNm="고양이", colorCd="흰색&갈색")
-    assert (
-        generate_tags(
-            normalize_animal(ValidatedAnimal.model_validate(raw), today=TODAY), today=TODAY
-        )
-        == []
-    )
+    assert {tag.tag_key for tag in tags} == {"white_coat", "cuddly", "playful"}
+    assert all(tag.evidence and 0 < tag.confidence <= 1 for tag in tags)
+    assert {row["type"] for row in CATALOG} == {"vibe", "trait"}
+    assert all(row["emoji"] for row in CATALOG)
+    raw.update(colorCd="흰색&갈색", specialMark="", sfeSoci="", weight="미상")
+    mixed = generate_tags(normalize_animal(ValidatedAnimal.model_validate(raw), today=TODAY), today=TODAY)
+    assert {tag.tag_key for tag in mixed} == {"brownie"}
 
 
 def test_pagination_honors_server_size_and_checks_terminal_page():
@@ -324,3 +322,21 @@ def test_cli_incomplete_replay_does_not_create_database_engine(tmp_path, monkeyp
     monkeypatch.setattr(sync_cli, "create_database_engine", unexpected_database)
     assert sync_cli.main(["--replay", str(path)]) == 2
     assert json.loads(capsys.readouterr().out)["error_code"] == "REPLAY_INCOMPLETE"
+
+
+@pytest.mark.parametrize("description", [
+    "낯가림 없음", "순하지 않음", "사람을 좋아하지 않음", "활발한지 미확인", "차분한 듯?",
+])
+def test_negated_or_uncertain_behavior_is_not_tagged(description):
+    raw = source_row(colorCd="혼합", specialMark=description, sfeSoci="", sfeHealth="온순하고 활발함")
+    tags = generate_tags(normalize_animal(ValidatedAnimal.model_validate(raw), today=TODAY), today=TODAY)
+    assert not any(tag.tag_key in {"gentle", "shy", "playful", "calm", "people_friendly"} for tag in tags)
+
+
+def test_behavior_evidence_is_deduplicated_across_fields():
+    raw = source_row(colorCd="흰색", specialMark="온순하고 차분함. 겁이 많음", sfeSoci="온순하고 차분함. 겁이 많음")
+    tags = generate_tags(normalize_animal(ValidatedAnimal.model_validate(raw), today=TODAY), today=TODAY)
+    assert {tag.tag_key for tag in tags} == {"white_coat", "gentle", "calm", "shy", "cuddly"}
+    assert len(tags) == 5
+    assert len({row["emoji"] for row in CATALOG}) == len(CATALOG)
+    assert len({row["label"] for row in CATALOG}) == len(CATALOG)

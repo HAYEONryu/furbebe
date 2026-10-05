@@ -61,6 +61,8 @@ class AnimalTag(UUIDPrimaryKey, CreatedAt, Base):
         Index("ix_animal_tags_tag_key_animal_id", "tag_key", "animal_id"),
     )
 
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default=true())
+
     animal_id: Mapped[UUID] = mapped_column(ForeignKey("animals.id", ondelete="CASCADE"))
     tag_key: Mapped[str] = mapped_column(ForeignKey("tags.key", ondelete="RESTRICT"))
     confidence: Mapped[Decimal] = mapped_column(Numeric)

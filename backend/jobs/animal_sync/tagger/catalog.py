@@ -1,0 +1,138 @@
+"""Stable API keys; display categories are separate from the existing tag types."""
+
+GROUPS = {
+    "personality": [
+        ("gentle", "순딩이"),
+        ("shy", "수줍요정"),
+        ("playful", "똥꼬발랄"),
+        ("affectionate", "애교쟁이"),
+        ("calm", "차분선비댕"),
+        ("curious", "호기심대장"),
+        ("smart", "똑똑이"),
+        ("sensitive", "새콤새침"),
+    ],
+    "relationship": [
+        ("people_friendly", "사람좋아"),
+        ("outgoing", "적극댕댕이"),
+        ("dog_friendly", "친구좋아"),
+        ("smiley", "미소천사"),
+        ("lap_dog", "무릎댕댕이"),
+    ],
+    "appearance_color": [
+        ("patterned_coat", "삼색이"),
+        ("cookies_cream", "쿠앤크"),
+        ("brownie", "브라우니"),
+        ("cream_coat", "크림이"),
+        ("black_coat", "검댕이"),
+        ("white_coat", "흰둥이"),
+    ],
+    "appearance_extra": [
+        ("curly", "곱슬몽실"),
+        ("pointed_ears", "쫑긋귀"),
+        ("wagging_tail", "꼬리콥터"),
+        ("fluffy", "복슬복슬"),
+    ],
+    "size": [
+        ("pocket", "쪼꼬미"),
+        ("cuddly", "품에쏙"),
+        ("sturdy", "댕든든"),
+        ("giant", "왕크왕귀"),
+    ],
+}
+EMOJIS = {
+    "gentle": "🙂",
+    "shy": "🧚",
+    "playful": "🤸",
+    "affectionate": "💕",
+    "calm": "🍵",
+    "curious": "🔎",
+    "smart": "🧠",
+    "sensitive": "🌵",
+    "people_friendly": "🥰",
+    "outgoing": "🙋",
+    "dog_friendly": "🐕",
+    "smiley": "😄",
+    "lap_dog": "🛋️",
+    "patterned_coat": "🎨",
+    "cookies_cream": "🍪",
+    "brownie": "🤎",
+    "cream_coat": "🍦",
+    "black_coat": "🖤",
+    "white_coat": "🤍",
+    "curly": "🌀",
+    "pointed_ears": "👂",
+    "wagging_tail": "🚁",
+    "fluffy": "☁️",
+    "pocket": "🫘",
+    "cuddly": "🧸",
+    "sturdy": "💪",
+    "giant": "🦁",
+}
+DESCRIPTIONS = {
+    "gentle": "설명에 온순한 모습이 담긴 친구예요. 다정한 첫인사는 천천히 건네주세요.",
+    "shy": "낯선 만남 앞에서는 조금 조심스러워요. 마음의 문은 이 친구의 속도로 열어주세요.",
+    "playful": "활발하게 움직이는 모습이 소개된 친구예요. 함께 놀 시간을 넉넉히 준비해볼까요?",
+    "affectionate": "애교를 표현하는 모습이 소개된 친구예요. 귀여운 관심 요청을 만나볼지도 몰라요.",
+    "calm": "얌전하거나 차분한 모습이 소개된 친구예요. 첫 만남도 느긋한 템포로 가볼까요?",
+    "curious": "새로운 것을 궁금해하는 친구예요. 오늘의 탐험은 냄새 지도부터!",
+    "smart": "이해하거나 배우는 모습이 소개된 친구예요. 작은 성공에도 칭찬을 듬뿍 주세요.",
+    "sensitive": "낯선 자극에 예민하게 반응할 수 있어요. 충분한 거리와 시간을 두고 천천히 친해져요.",
+    "people_friendly": "사람을 좋아하거나 잘 따르는 모습이 소개됐어요. 반가운 인사도 이 친구의 속도에 맞춰주세요.",
+    "outgoing": "먼저 다가가는 적극적인 모습이 소개된 친구예요. 반가운 만남을 차근차근 이어가요.",
+    "dog_friendly": "다른 개와 어울리는 모습이 소개된 친구예요. 새 친구 소개는 천천히, 궁합은 직접 확인해요.",
+    "smiley": "웃는 듯한 표정이 매력인 친구예요. 예쁜 표정이 언제나 즐겁다는 뜻은 아니에요.",
+    "lap_dog": "무릎에 오르거나 앉는 걸 좋아한다고 소개됐어요. 가까이 와주면 포근한 자리를 내어주세요.",
+    "patterned_coat": "세 가지 이상 털색이나 얼룩·점박이·호랑이 무늬가 있어요. 나만의 털옷 패턴을 입은 친구예요.",
+    "cookies_cream": "검정과 흰색 털이 어우러진 친구예요. 쿠키와 크림처럼 매력적인 조합!",
+    "brownie": "갈색 계열이 포함된 털옷을 입었어요. 브라우니처럼 따뜻한 색감의 친구예요.",
+    "cream_coat": "크림·베이지 계열 털색이 소개된 친구예요. 부드러운 색감은 덤, 성격은 만나서 알아가요.",
+    "black_coat": "검정 계열 털옷을 입은 친구예요. 시크한 색감 속 어떤 매력이 있을까요?",
+    "white_coat": "흰색 계열 털옷을 입은 친구예요. 밝은 털색만큼 눈에 쏙 들어오는 매력!",
+    "curly": "곱슬한 털이 소개된 친구예요. 작은 컬마다 귀여움이 돌돌!",
+    "pointed_ears": "쫑긋한 귀가 소개된 친구예요. 귀 모양이 성격이나 청력을 말해주지는 않아요.",
+    "wagging_tail": "꼬리를 흔드는 모습이 소개됐어요. 꼬리콥터 가동 중! 몸 전체의 신호도 함께 읽어주세요.",
+    "fluffy": "복슬하거나 풍성한 털이 소개된 친구예요. 포근해 보여도 쓰다듬기는 천천히 허락받아요.",
+    "pocket": "등록 체중이 5kg 미만인 작은 친구예요. 몸집은 쪼꼬미, 함께할 행복은 크게!",
+    "cuddly": "등록 체중이 5kg 이상 10kg 미만이에요. 품에쏙은 몸집 별명이지, 안기는 걸 좋아한다는 뜻은 아니에요.",
+    "sturdy": "등록 체중이 10kg 이상 20kg 미만이에요. 든든한 몸집과 함께할 산책을 준비해요.",
+    "giant": "등록 체중이 20kg 이상인 친구예요. 왕크니까 왕귀여워! 편안하게 지낼 공간도 넉넉히 챙겨요.",
+}
+CATEGORIES = {key: category for category, entries in GROUPS.items() for key, _ in entries}
+CATALOG = [
+    {
+        "key": key,
+        "type": "trait" if category in {"personality", "relationship"} else "vibe",
+        "label": label,
+        "emoji": EMOJIS[key],
+        "description": DESCRIPTIONS[key],
+        "display_order": order,
+    }
+    for order, (category, key, label) in enumerate(
+        (category, key, label) for category, entries in GROUPS.items() for key, label in entries
+    )
+]
+OWNED_KEYS = frozenset(CATEGORIES)
+TRAIT_CATALOG = [row for row in CATALOG if row["type"] == "trait"]
+TRAIT_KEYS = frozenset(row["key"] for row in TRAIT_CATALOG)
+VIBE_KEYS = OWNED_KEYS - TRAIT_KEYS
+LEGACY_KEYS = frozenset(
+    {
+        "tiny",
+        "small",
+        "medium",
+        "large",
+        "puppy",
+        "young",
+        "adult",
+        "senior",
+        "white",
+        "cream",
+        "black",
+        "brown",
+        "bean",
+        "cheese",
+        "cloud",
+        "baby_dog",
+        "senior_dog",
+    }
+)

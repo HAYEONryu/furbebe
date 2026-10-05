@@ -1,3 +1,4 @@
+import { pageMeta } from '../services/seo.js';
 import { Link, useRevalidator } from 'react-router';
 import { AnimalGrid } from '../components/animal-card.jsx';
 import { AnimalImage } from '../components/animal-image.jsx';
@@ -5,13 +6,14 @@ import { Button } from '../components/button.jsx';
 import { FavoriteButton } from '../components/favorite-button.jsx';
 import { ImageGallery } from '../components/image-gallery.jsx';
 import { ShareButton } from '../components/share-button.jsx';
+import { ProcessState } from '../components/process-state.jsx';
 import { TagChip } from '../components/tag-chip.jsx';
 import { birthLabel, factLabel, getAnimalDetailPage, hasText, shelterPhoneHref, textOrUnknown, weightLabel } from '../services/animal-detail.js';
 import { loadRoute } from '../services/route-loader.js';
 export { RouteError as ErrorBoundary } from '../components/route-error.jsx';
 
 export function meta({ data } = {}) {
-  return [{ title: data?.seo.title ?? '아이의 소식 · FURBEBE' }, ...(data?.seo ? [{ name: 'description', content: data.seo.description }] : [])];
+  return pageMeta({ title: data?.seo.title ?? '아이의 소식 · FURBEBE', description: data?.seo.description ?? '등록된 구조동물 정보를 확인할 수 없어요.', path: data?.seo.path ?? '/dogs', image: data?.seo.image, noindex: !data });
 }
 export function loader({ params, request }) {
   return loadRoute(() => getAnimalDetailPage(params.animalId, { signal: request.signal }));
@@ -65,14 +67,13 @@ function DetailContent({ data }) {
       <ImageGallery images={detail.images} name={name} />
       <header className="detail-summary">
         <p className="eyebrow">ONE LITTLE LIFE, ONE UNIQUE STORY</p>
-        <span className="detail-state">{textOrUnknown(notice.process_state)}</span>
+        <ProcessState className="detail-state" value={notice.process_state} />
         <h1>{name}</h1>
         <p className="detail-region">{textOrUnknown(found.region.display)}</p>
         <p className="detail-at-a-glance">{factLabel('sex', animal.sex)} · {birthLabel(animal)} · {weightLabel(animal)}</p>
         {hasText(notice.notice_no) && <p className="detail-notice">공고번호 <span>{notice.notice_no}</span></p>}
         {detail.tags.length > 0 && <section className="detail-tags" aria-label="아이의 태그">
-          <ul>{detail.tags.map((tag) => <li key={tag.key}><TagChip label={tag.label} emoji={tag.emoji} type={tag.type} /></li>)}</ul>
-          {detail.tags.some((tag) => hasText(tag.evidence)) && <details className="tag-evidence"><summary>태그에 담긴 등록 정보</summary><dl>{detail.tags.filter((tag) => hasText(tag.evidence)).map((tag) => <div key={tag.key}><dt>{tag.label}</dt><dd>{tag.evidence}</dd></div>)}</dl></details>}
+          <ul>{detail.tags.map((tag) => <li key={tag.key}><TagChip tagKey={tag.key} label={tag.label} emoji={tag.emoji} type={tag.type} description={tag.description} /></li>)}</ul>
         </section>}
         <a href="#shelter-info" className="text-link">보호소 정보 살펴보기 <span aria-hidden="true">↓</span></a>
       </header>
@@ -83,7 +84,7 @@ function DetailContent({ data }) {
           ['품종', name], ['성별', factLabel('sex', animal.sex)], ['중성화', factLabel('neutered', animal.neutered)],
           ['출생연도 / 나이', birthLabel(animal)], ['나이 그룹', factLabel('age', animal.age_group)],
           ['체중', weightLabel(animal)], ['크기 그룹', factLabel('size', animal.size_group)],
-          ['털색', textOrUnknown(animal.color_text)], ['현재 상태', textOrUnknown(notice.process_state)],
+          ['털색', textOrUnknown(animal.color_text)], ['현재 상태', <ProcessState key="state" value={notice.process_state} />],
         ]} /><p className="detail-source-note">나이 그룹은 출생연도 기반의 추정 범위이며, 크기 그룹은 체중에 따른 탐색 기준이에요.</p>
       </section>
       <section className="detail-section" aria-labelledby="found-title"><h2 id="found-title" className="section-title">발견 정보</h2>

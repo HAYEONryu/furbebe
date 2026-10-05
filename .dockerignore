@@ -1,8 +1,19 @@
+# Deny everything; only API source and runtime requirements enter build context.
 **
 !backend/
-!backend/**
-backend/tests/
-backend/**/__pycache__/
-backend/**/*.pyc
-backend/**/.env
-backend/**/.env.*
+!backend/__init__.py
+!backend/requirements.txt
+!backend/requirements-runtime-lock.txt
+!backend/app/
+!backend/app/**/
+!backend/app/**/*.py
+!backend/app/data/regions.json
+**/__pycache__/
+**/*.pyc
+**/.env
+**/.env.*
+**/*.env
+**/env
+**/.venv/
+**/*.pem
+**/*.key

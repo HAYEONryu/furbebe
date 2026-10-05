@@ -15,7 +15,7 @@
 
 @layer base {
   html { color-scheme: light; background: var(--color-ivory); color: var(--color-ink); }
-  body { margin: 0; min-width: 0; font-family: var(--font-sans); line-height: 1.7; }
+  body { overflow-wrap: anywhere; margin: 0; min-width: 0; font-family: var(--font-sans); line-height: 1.7; }
   h1 { font-size: clamp(1.75rem, 4vw, 2.5rem); font-weight: 700; line-height: 1.3; }
   h2 { font-size: 1.25rem; font-weight: 700; }
   a, button, input, select { -webkit-tap-highlight-color: transparent; }
@@ -33,6 +33,8 @@
 }
 
 @layer components {
+  .animal-image { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: .5rem; }
+  .animal-image[role=img] { display: flex; }
   .page-width { width: min(100% - 2rem, 74rem); margin-inline: auto; }
   .button { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 44px; min-width: 44px; padding: .65rem 1.15rem; border: 1px solid transparent; border-radius: .65rem; font-weight: 650; text-decoration: none; background: var(--color-butter); color: var(--color-ink); }
   .button:hover { filter: brightness(.97); }
@@ -51,7 +53,7 @@
   .hero-copy > .button { background: var(--color-ink); color: var(--color-ivory); padding-inline: 1.5rem; }
   .hero-visual { position: relative; align-self: center; padding: 1.5rem .4rem 1.8rem; min-width: 0; }
   .hero-photo { padding: .65rem; background: #fffdf8; border: 1px solid #e1cda6; border-radius: 1rem; transform: rotate(2deg); box-shadow: 0 10px 30px #493a2c12; }
-  .hero-photo img { aspect-ratio: 1 / 1; }
+  .hero-photo img, .hero-photo > div { aspect-ratio: 1 / 1; }
   .hero-photo figcaption { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .9rem .5rem .3rem; }
   .hero-photo-link { display: inline-flex; min-height: 44px; min-width: 44px; align-items: center; justify-content: center; border-radius: 50%; background: var(--color-butter); font-size: 1.4rem; }
   .hero-note { position: absolute; z-index: 1; top: .25rem; left: .7rem; transform: rotate(-5deg); padding: .45rem .9rem; background: var(--color-peach); font-size: .75rem; font-weight: 600; }
@@ -74,7 +76,7 @@
   .card-photo { overflow: hidden; border-radius: 1rem 1rem 0 0; }
   .card-photo img, .card-photo > div { border-radius: 0; }
   .card-content { padding: 1rem; }
-  .card-content .state-label { flex-shrink: 0; max-width: 45%; padding: .15rem .5rem; border-radius: .4rem; background: var(--color-ivory); font-size: .7rem; text-align: center; }
+  .card-content .state-label { flex-shrink: 0; white-space: nowrap; padding: .15rem .5rem; border-radius: .4rem; background: var(--color-ivory); font-size: .7rem; text-align: center; }
   .card-content li > span { font-size: .7rem; padding: .2rem .6rem; }
   .card-favorite { position: absolute; top: .7rem; right: .7rem; }
   .favorite-icon { width: 44px; height: 44px; padding: 0; border-radius: 50%; border-color: #fffdf8; background: #fffdf8; font-size: 1.5rem; box-shadow: 0 2px 10px #493a2c14; }
@@ -127,7 +129,7 @@
     .quick-tags-row { flex-wrap: wrap; overflow: visible; }
     .hero { grid-template-columns: 1.1fr 1fr; gap: 3rem; padding: 2.75rem; }
     .hero-visual { max-width: 420px; }
-    .quick-discovery-form { grid-template-columns: repeat(3, minmax(0, 1fr)) auto; }
+    .quick-discovery-form { grid-template-columns: repeat(4, minmax(0, 1fr)) auto; }
     .filter-dialog { margin: auto; max-width: 660px; border-radius: 1.25rem; }
     .listing-intro { padding-block: 1rem 2.5rem; }
     .animal-search { max-width: 44rem; }
@@ -139,3 +141,14 @@
     .animal-grid-recent { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   }
 }
+
+/* Tag explanations stay attached to their chips when the row wraps. */
+.tag-tooltip-anchor { position: relative; display: inline-flex; }
+.tag-tooltip { position: absolute; left: 50%; bottom: calc(100% + .5rem); transform: translateX(-50%); z-index: 20; width: max-content; max-width: min(15rem, 70vw); padding: .65rem .8rem; border-radius: .75rem; background: var(--color-ink); color: white; font-size: .8rem; line-height: 1.6; box-shadow: 0 4px 16px #0002; }
+.tag-tooltip::after { content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); border: .35rem solid transparent; border-top-color: var(--color-ink); }
+.tag-tooltip-anchor::before { content: ''; position: absolute; bottom: 100%; left: 0; right: 0; height: .5rem; }
+
+.tag-tooltip-floating::after { display: none; }
+
+.process-state-tooltip { flex-shrink: 0; white-space: nowrap; }
+.filter-fields > .tag-tooltip-anchor { display: block; min-width: 0; }

@@ -81,12 +81,13 @@ it('orders source photos and supports thumbnail Enter, arrows and Home/End witho
   await user.keyboard('{ArrowLeft}'); expect(second).toHaveFocus();
 });
 
-it('replaces a broken photo with a fallback and recovers when another photo is selected', async () => {
+it('automatically selects a working photo and explains when every photo fails', () => {
   render(<ImageGallery name="테스트 품종" images={photos} />);
   fireEvent.error(screen.getByRole('img', { name: '테스트 품종의 보호소 등록 사진 1' }));
-  expect(screen.getByRole('img', { name: '사진을 불러올 수 없어요.' })).toBeVisible();
-  await userEvent.setup().click(screen.getByRole('button', { name: '사진 2 보기' }));
-  expect(screen.getByRole('img', { name: '테스트 품종의 보호소 등록 사진 2' })).toBeVisible();
+  expect(screen.getByRole('img', { name: '테스트 품종의 보호소 등록 사진 2' })).toHaveAttribute('src', photos[0].url);
+  expect(screen.getByRole('button', { name: '사진 2 보기' })).toHaveAttribute('aria-pressed', 'true');
+  fireEvent.error(screen.getByRole('img', { name: '테스트 품종의 보호소 등록 사진 2' }));
+  expect(screen.getByRole('img', { name: '사진을 가지고 오는데 실패했습니다. 국가동물보호정보시스템 공고를 확인해 주세요.' })).toBeVisible();
 });
 
 it('renders all six source descriptions as plain text without making health claims', async () => {
@@ -97,13 +98,13 @@ it('renders all six source descriptions as plain text without making health clai
   expect(document.body.textContent).not.toMatch(/건강해요|사람을 좋아해요|입양이 급해요|곧 안락사/);
 });
 
-it('shows supplied FACT, VIBE and existing TRAIT labels and evidence without a confidence percentage', async () => {
+it('shows tag labels but keeps generator evidence out of the user interface', async () => {
   serve({ animal: { ...detail, tags: [...tags.slice(0, 2), { key: 'existing-trait', type: 'trait', label: '기존 행동 태그', confidence: 0.95, evidence: '보호소에 등록된 행동 원문' }] } });
   route(); await ready();
   expect(screen.getByText('기존 행동 태그', { selector: 'span' })).toBeVisible();
-  expect(screen.getByText('콩만이')).toBeVisible();
-  await userEvent.setup().click(screen.getByText('태그에 담긴 등록 정보'));
-  expect(screen.getByText('보호소에 등록된 행동 원문')).toBeVisible();
+  expect(screen.queryByText('콩만이')).toBeNull();
+  expect(screen.queryByText('태그에 담긴 등록 정보')).not.toBeInTheDocument();
+  expect(screen.queryByText('보호소에 등록된 행동 원문')).not.toBeInTheDocument();
   expect(document.body.textContent).not.toMatch(/95%|확률|0\.95/);
 });
 

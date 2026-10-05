@@ -88,8 +88,11 @@ def test_defaults_exact_summary_contract_and_nulls(env):
         "notice_end",
         "region",
         "primary_image",
+        "image_candidates",
         "tags",
     }
+    for item in data["items"]:
+        assert all(image["type"] == "source" for image in item["image_candidates"])
     first = detail(env, 1)
     assert first["animal"]["weight_kg"] == 0 and first["animal"]["size_group"] == "tiny"
     nulls = detail(env, 8)
@@ -102,6 +105,33 @@ def test_defaults_exact_summary_contract_and_nulls(env):
         "sigungu": None,
         "display": "미확인 지역 원문",
     }
+
+
+def test_non_dogs_are_excluded_from_all_discovery_surfaces(env):
+    hidden = [UUID(int=1), UUID(int=2), UUID(int=3)]
+    with env.engine.begin() as conn:
+        for animal_id, species in zip(hidden, ["cat", "other", None], strict=True):
+            conn.execute(
+                update(Animal).where(Animal.id == animal_id).values(
+                    species=species, breed="강아지가 아닌 품종"
+                )
+            )
+    data = listing(env, page_size=60)
+    assert data["pagination"]["total"] == 37
+    assert not {str(value) for value in hidden} & {item["id"] for item in data["items"]}
+    assert listing(env, q="강아지가 아닌 품종")["pagination"]["total"] == 0
+    for animal_id in hidden:
+        for suffix in ("", "/similar"):
+            response = env.client.get(f"/api/v1/animals/{animal_id}{suffix}")
+            assert response.status_code == 404
+    similar = env.client.get(f"/api/v1/animals/{UUID(int=4)}/similar?limit=12").json()
+    assert not {str(value) for value in hidden} & {item["id"] for item in similar["items"]}
+    facets = env.client.get("/api/v1/meta/filters").json()
+    assert "강아지가 아닌 품종" not in str(facets)
+    overview = env.client.get("/api/v1/stats/overview").json()
+    assert overview["animals_total"] == 37
+    assert overview["new_today"] == 0
+    assert overview["with_primary_image"] == 36
 
 
 @pytest.mark.parametrize(
@@ -404,3 +434,21 @@ def test_transaction_timeout_uses_configuration_and_cancels_slow_sql(env):
         with pytest.raises(DBAPIError) as failure:
             queries.connection.execute(text("SELECT pg_sleep(0.2)"))
         assert failure.value.orig.sqlstate == "57014"
+
+
+def test_notice_number_search_matches_literal_substrings_across_protected_states(env):
+    with env.engine.begin() as connection:
+        connection.execute(update(Animal).where(Animal.id == UUID(int=1)).values(
+            notice_no="서울-테스트-2026-00123", process_state="보호중", notice_start=TODAY
+        ))
+        connection.execute(update(Animal).where(Animal.id == UUID(int=2)).values(
+            notice_no="서울-테스트-2026-001234", process_state="보호중", notice_start=TODAY - timedelta(days=20)
+        ))
+        connection.execute(update(Animal).where(Animal.id == UUID(int=3)).values(
+            notice_no="테스트%특수", process_state="보호중"
+        ))
+    result = listing(env, q="2026-00123")
+    assert {row["id"] for row in result["items"]} == {str(UUID(int=1)), str(UUID(int=2))}
+    assert {row["process_state"] for row in result["items"]} == {"보호중", "입양 가능"}
+    literal = listing(env, q="%특수")
+    assert [row["id"] for row in literal["items"]] == [str(UUID(int=3))]

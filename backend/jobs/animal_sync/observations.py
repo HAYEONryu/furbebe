@@ -70,7 +70,7 @@ def profile_observations(rows, today, redactor):
             else "young"
             if estimated <= 4
             else "adult"
-            if estimated <= 8
+            if estimated <= 9
             else "senior"
         )
         ages[age] += 1

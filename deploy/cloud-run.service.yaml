@@ -1,0 +1,65 @@
+# Preparation template only. Requires explicit production deployment approval.
+# Replace PROJECT_ID, IMAGE_DIGEST, SERVICE_ACCOUNT and SECRET_VERSION placeholders.
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: furbebe-api
+  namespace: PROJECT_ID
+  labels:
+    cloud.googleapis.com/location: asia-northeast3
+  annotations:
+    run.googleapis.com/ingress: internal-and-cloud-load-balancing
+    run.googleapis.com/maxScale: '2'
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/minScale: '0'
+        autoscaling.knative.dev/maxScale: '2'
+        run.googleapis.com/cpu-throttling: 'true'
+        run.googleapis.com/startup-cpu-boost: 'false'
+    spec:
+      serviceAccountName: SERVICE_ACCOUNT@PROJECT_ID.iam.gserviceaccount.com
+      containerConcurrency: 4
+      timeoutSeconds: 30
+      containers:
+        - image: asia-northeast3-docker.pkg.dev/PROJECT_ID/furbebe/api@sha256:IMAGE_DIGEST
+          ports:
+            - containerPort: 8080
+          resources:
+            limits:
+              cpu: '1'
+              memory: 512Mi
+          env:
+            - name: APP_ENV
+              value: production
+            - name: FRONTEND_ORIGIN
+              value: https://furbebe.site,https://www.furbebe.site
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: furbebe-prod-database-url
+                  key: SECRET_VERSION
+            - name: DB_POOL_SIZE
+              value: '3'
+            - name: DB_MAX_OVERFLOW
+              value: '1'
+            - name: DB_POOL_TIMEOUT
+              value: '5'
+            - name: DB_POOL_RECYCLE
+              value: '1800'
+            - name: DB_CONNECT_TIMEOUT
+              value: '5'
+            - name: DB_STATEMENT_TIMEOUT_MS
+              value: '5000'
+          # DB-dependent /health remains an operational readiness smoke check.
+          # Avoid restarting every instance during a remote DB outage.
+          startupProbe:
+            tcpSocket:
+              port: 8080
+            periodSeconds: 2
+            timeoutSeconds: 1
+            failureThreshold: 30
+  traffic:
+    - latestRevision: true
+      percent: 100

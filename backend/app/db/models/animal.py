@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
 from sqlalchemy import (
+    Boolean,
     CheckConstraint,
     Date,
     DateTime,
@@ -16,6 +17,7 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
     func,
+    true,
 )
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -51,6 +53,8 @@ class Animal(UUIDPrimaryKey, Timestamps, Base):
         Index("ix_animals_weight_kg", "weight_kg"),
         Index("ix_animals_birth_year", "birth_year"),
     )
+
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default=true())
 
     source: Mapped[str] = mapped_column(Text)
     source_id: Mapped[str] = mapped_column(Text)
@@ -110,6 +114,8 @@ class AnimalImage(UUIDPrimaryKey, CreatedAt, Base):
         # Detail/card images in display order; id provides a stable tie breaker.
         Index("ix_animal_images_animal_id_sort_order", "animal_id", "sort_order"),
     )
+
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default=true())
 
     animal_id: Mapped[UUID] = mapped_column(ForeignKey("animals.id", ondelete="CASCADE"))
     image_url: Mapped[str] = mapped_column(Text)

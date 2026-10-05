@@ -9,7 +9,7 @@ const LABELS = {
   sex: { male: '수컷', female: '암컷' },
   neutered: { yes: '완료', no: '안 됨' },
   size: { tiny: '5kg 이하', small: '5kg 초과~10kg', medium: '10kg 초과~20kg', large: '20kg 초과' },
-  age: { puppy: '추정 1세 이하', young: '추정 2~4세', adult: '추정 5~8세', senior: '추정 9세 이상' },
+  age: { puppy: '추정 1세 이하', young: '추정 2~4세', adult: '추정 5~9세', senior: '추정 10세 이상' },
 };
 export function factLabel(group, value) {
   return Object.hasOwn(LABELS[group], value) ? LABELS[group][value] : '정보 없음';
@@ -37,7 +37,7 @@ export function shelterPhoneHref(value) {
   return phone.replace(/\D/g, '').length >= 6 ? `tel:${phone}` : null;
 }
 
-/** Factual metadata shared by route meta and sharing; full SEO belongs to Phase 9. */
+/** Metadata uses only validated FastAPI facts. */
 export function detailSeo(detail) {
   const name = hasText(detail.animal.breed) ? detail.animal.breed : '구조동물';
   const facts = [name, detail.found.region.display, detail.notice.process_state].filter(hasText);
@@ -45,6 +45,7 @@ export function detailSeo(detail) {
     title: `${name} · ${hasText(detail.found.region.display) ? `${detail.found.region.display} · ` : ''}FURBEBE`,
     description: `${facts.join(' · ')}. 등록된 구조동물 정보와 보호소 정보를 확인하세요.`,
     path: `/dogs/${detail.id}`,
+    image: sourceImages(detail.images)[0]?.url,
   };
 }
 

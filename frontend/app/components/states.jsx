@@ -24,7 +24,7 @@ export function ErrorState({ title = '정보를 불러오지 못했어요.', mes
 
 export function ImageEmptyState({ label = '아직 등록된 사진이 없어요.' }) {
   return (
-    <div className="flex aspect-[4/3] flex-col items-center justify-center gap-4 rounded-lg bg-cream/45 p-5 text-center text-muted" role="img" aria-label={label}>
+    <div className="animal-image flex flex-col items-center justify-center gap-4 rounded-lg bg-cream/45 p-5 text-center text-muted" role="img" aria-label={label}>
       <svg viewBox="0 0 96 96" width="64" height="64" fill="currentColor" aria-hidden="true">
         <ellipse cx="30" cy="30" rx="9" ry="12" transform="rotate(-25 30 30)" />
         <ellipse cx="51" cy="25" rx="9" ry="12" />

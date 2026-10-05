@@ -1,3 +1,4 @@
+import { displayTags } from './tag-presentation.js';
 import { ApiError } from './api.js';
 
 export const isRecord = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -22,6 +23,10 @@ function validTag(value) {
     ['fact', 'trait', 'vibe'].includes(value.type);
 }
 
+function displaySummary(animal) {
+  return { ...animal, tags: displayTags(animal.tags) };
+}
+
 function validSummary(value) {
   return isRecord(value) && isAnimalId(value.id) && nullableString(value.breed) &&
     (value.birth_year === null || Number.isInteger(value.birth_year)) && nullableString(value.age_text) &&
@@ -38,7 +43,7 @@ export function animalList(value) {
   requireShape(isRecord(p) && count(p.total) && count(p.total_pages) &&
     Number.isInteger(p.page) && p.page >= 1 && Number.isInteger(p.page_size) && p.page_size >= 1 &&
     typeof p.has_next === 'boolean' && typeof p.has_previous === 'boolean' && isRecord(value.applied_filters));
-  return value;
+  return { ...value, items: value.items.map(displaySummary) };
 }
 
 export function animalDetail(value) {
@@ -54,18 +59,18 @@ export function animalDetail(value) {
   requireShape(value.descriptions == null || optionalStrings(value.descriptions, ['special_mark', 'social', 'health', 'etc', 'vaccination', 'health_check']));
   requireShape(value.shelter == null || optionalStrings(value.shelter, ['name', 'phone', 'address', 'organization']));
   requireShape(value.adoption_promotion == null || optionalStrings(value.adoption_promotion, ['title', 'start_date', 'end_date', 'condition_text', 'description', 'image_url']));
-  return value;
+  return { ...value, tags: displayTags(value.tags) };
 }
 
 export function similarAnimals(value) {
   requireShape(isRecord(value) && isAnimalId(value.source_animal_id) &&
     Array.isArray(value.items) && value.items.every(validSummary));
-  return value;
+  return { ...value, items: value.items.map(displaySummary) };
 }
 
 export function tagList(value) {
   requireShape(isRecord(value) && Array.isArray(value.items) && value.items.every(validTag));
-  return value;
+  return { ...value, items: displayTags(value.items) };
 }
 
 export function filterMeta(value) {
@@ -81,7 +86,18 @@ export function filterMeta(value) {
   for (const key of ['sexes', 'neutered', 'size_groups', 'age_groups', 'process_states']) {
     requireShape(value[key].every((option) => typeof option.value === 'string' && typeof option.label === 'string'));
   }
-  return value;
+  const sizeLabels = {
+    tiny: '아주 작아요 (5kg 이하)',
+    small: '작아요 (5kg 초과~10kg 이하)',
+    medium: '중간 (10kg 초과~20kg 이하)',
+    large: '커요 (20kg 초과)',
+  };
+  const ageLabels = { puppy: '퍼피 (0~1살)', young: '청소년 (2~4살)', adult: '성견 (5~9살)', senior: '시니어 (10살~)' };
+  return {
+    ...value,
+    size_groups: value.size_groups.map((option) => ({ ...option, label: sizeLabels[option.value] ?? option.label })),
+    age_groups: value.age_groups.map((option) => ({ ...option, label: ageLabels[option.value] ?? option.label })),
+  };
 }
 
 export function overview(value) {

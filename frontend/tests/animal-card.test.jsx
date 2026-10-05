@@ -22,8 +22,8 @@ it('renders source facts and prioritizes VIBE with no more than three tags', () 
   expect(screen.getByText(/2024년생/)).toHaveTextContent('4.5kg');
   expect(screen.getByText('테스트 지역')).toBeVisible();
   const chips = within(screen.getByRole('list', { name: '대표 태그' })).getAllByRole('listitem');
-  expect(chips).toHaveLength(3);
-  expect(chips[0]).toHaveTextContent('콩만이');
+  expect(chips).toHaveLength(2);
+  expect(chips[0]).toHaveTextContent('흰둥이🤍');
 });
 
 it('keeps unknown weight and age visible, uses the placeholder and hides empty tags', () => {

@@ -1,4 +1,4 @@
-"""Explicit local or Supabase DEV sync CLI. No schema auto-creation."""
+"""Explicit local / Supabase DEV / approved PROD sync CLI. No schema auto-creation."""
 
 import argparse
 import json
@@ -10,7 +10,10 @@ from uuid import uuid4
 from sqlalchemy.engine import make_url
 
 from backend.app.core.config import ROOT, ConfigurationError, Settings, get_settings
-from backend.app.core.database_target import get_dev_database_settings
+from backend.app.core.database_target import (
+    get_dev_database_settings,
+    get_prod_database_settings,
+)
 from backend.app.db.session import DatabaseNotConfigured, create_database_engine
 
 from .capture import RecordingClient, ReplayClient
@@ -46,7 +49,9 @@ def parser():
     cli.add_argument("--batch-size", type=int, default=500)
     cli.add_argument("--max-pages", type=int, default=10000)
     cli.add_argument("--max-animals", type=int, help="Reject a larger source total before writes")
-    cli.add_argument("--database-target", choices=("local", "supabase-dev"), default="local")
+    cli.add_argument(
+        "--database-target", choices=("local", "supabase-dev", "supabase-prod"), default="local"
+    )
     cli.add_argument(
         "--full",
         action="store_true",
@@ -75,11 +80,15 @@ def main(argv=None):
         and (not args.begin_date or not args.end_date or args.begin_date > args.end_date)
     ):
         cli.error("Live sync requires an ordered begin-date/end-date window")
+    if args.database_target == "supabase-prod" and args.replay:
+        cli.error("Production replay is not allowed")
     logging.basicConfig(level=logging.INFO, format="%(message)s")
     engine = client = recording = None
     try:
         if args.database_target == "supabase-dev":
             settings = get_dev_database_settings()
+        elif args.database_target == "supabase-prod":
+            settings = get_prod_database_settings()
         else:
             settings = get_settings()
             require_local_development(settings)
@@ -123,6 +132,21 @@ def main(argv=None):
         if recording:
             recording.close()
             recording = None
+        logging.getLogger("furbebe.sync").info(
+            json.dumps(
+                {
+                    "event": "sync_complete",
+                    "sync_id": str(report.sync_id),
+                    "status": report.status,
+                    "received": report.pagination.fetched_count,
+                    "inserted": report.inserted_count,
+                    "updated": report.updated_count,
+                    "error": report.error_count,
+                    "error_code": report.error_code,
+                    "duration_seconds": round(report.total_seconds, 6),
+                }
+            )
+        )
         result = report.to_dict() | {
             "mode": "replay" if args.replay else "live",
             "database_target": args.database_target,

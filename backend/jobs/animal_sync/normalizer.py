@@ -125,7 +125,7 @@ def age_group(birth_year: int | None, *, year: int) -> str:
     if birth_year is None:
         return "unknown"
     age = year - birth_year
-    for upper, group in ((1, "puppy"), (4, "young"), (8, "adult")):
+    for upper, group in ((1, "puppy"), (4, "young"), (9, "adult")):
         if age <= upper:
             return group
     return "senior"

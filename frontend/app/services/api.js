@@ -109,6 +109,6 @@ export function createApiClient({ baseUrl, fetchImpl = (...args) => globalThis.f
 
 export const API_BASE_URL = normalizeBaseUrl(
   import.meta.env.VITE_API_BASE_URL ||
-  (import.meta.env.DEV ? 'http://127.0.0.1:8080' : 'https://api.furbebe.com'),
+  (import.meta.env.DEV ? 'http://127.0.0.1:8080' : 'https://api.furbebe.site'),
 );
 export const api = createApiClient({ baseUrl: API_BASE_URL });

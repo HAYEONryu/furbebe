@@ -12,9 +12,9 @@
   .gallery-thumbnails button { display: block; width: 100%; overflow: hidden; border: 2px solid transparent; border-radius: .6rem; background: var(--color-cream); }
   .gallery-thumbnails button[aria-pressed=true] { border-color: var(--color-ink); box-shadow: 0 0 0 2px var(--color-butter); }
   .gallery-thumbnails img { border-radius: .35rem; }
-  .gallery-thumbnails button > div { padding: .4rem; min-height: 54px; }
-  .gallery-thumbnails svg { width: 32px; height: 32px; }
+  .gallery-thumbnails button > div { height: 54px; aspect-ratio: auto; gap: .2rem; padding: .2rem; }
   .gallery-thumbnails button > div span { display: none; }
+  .gallery-thumbnails svg { flex-shrink: 0; width: 24px; height: 24px; }
   .detail-summary { align-self: center; min-width: 0; }
   .detail-summary h1 { margin: 1rem 0 .6rem; font-size: clamp(2rem, 4vw, 3rem); letter-spacing: -.04em; }
   .detail-state { display: inline-flex; padding: .3rem .8rem; border-radius: .5rem; background: var(--color-butter); font-size: .8rem; font-weight: 650; }
@@ -47,7 +47,7 @@
   .promotion-section { margin-top: 2rem; }
   .source-paragraph { margin-top: 1.5rem; }
   .promotion-image { max-width: 44rem; margin-top: 1.5rem; }
-  .promotion-image img { height: auto; aspect-ratio: auto; object-fit: contain; }
+  .promotion-image img { aspect-ratio: 4 / 3; object-fit: contain; }
   .detail-connect { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.25rem; margin-top: 2rem; padding: 1.5rem; background: color-mix(in srgb, var(--color-butter) 35%, var(--color-ivory)); border-radius: 1rem; }
   .detail-actions { display: flex; flex-wrap: wrap; align-items: start; gap: 1rem; min-width: 0; }
   .detail-actions > div { min-width: 0; max-width: 100%; }

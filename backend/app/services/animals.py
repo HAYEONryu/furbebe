@@ -38,10 +38,10 @@ LABELS = {
         "unknown": "미상",
     },
     "age_groups": {
-        "puppy": "아가댕",
-        "young": "어린 친구",
-        "adult": "성견",
-        "senior": "시니어",
+        "puppy": "퍼피 (0~1살)",
+        "young": "청소년 (2~4살)",
+        "adult": "성견 (5~9살)",
+        "senior": "시니어 (10살~)",
         "unknown": "미상",
     },
 }
@@ -64,6 +64,7 @@ def summary(row):
         process_state=row["process_state"],
         region=region_response(row["organization"]),
         primary_image=row["images"][0] if row["images"] else None,
+        image_candidates=[image for image in row["images"] if image["type"] == "source"],
         tags=row["tags"],
     )
 

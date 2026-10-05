@@ -10,12 +10,14 @@ from backend.app.api.health import router as health_router
 from backend.app.core.config import Settings
 from backend.app.core.database_target import get_operational_settings
 from backend.app.core.http import RequestContextMiddleware, install_error_handlers
+from backend.app.core.logging import configure_logging
 from backend.app.db.session import Database
 from backend.app.schemas.common import UTF8JSONResponse
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
     settings = settings or get_operational_settings()
+    configure_logging()
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
@@ -29,6 +31,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app = FastAPI(
         title="FURBEBE API",
         version="1",
+        debug=False,
+        openapi_url=None if settings.app_env == "production" else "/openapi.json",
         lifespan=lifespan,
         default_response_class=UTF8JSONResponse,
         docs_url=None if settings.app_env == "production" else "/docs",

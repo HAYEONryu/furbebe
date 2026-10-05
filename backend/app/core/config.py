@@ -29,6 +29,10 @@ class Settings(BaseSettings):
     app_env: Literal["development", "test", "production"] = "development"
     database_url: SecretStr | None = None
     frontend_origin: str = "http://localhost:5173"
+    db_pool_size: int = Field(default=5, ge=1, le=20)
+    db_max_overflow: int = Field(default=5, ge=0, le=20)
+    db_pool_timeout: int = Field(default=5, ge=1, le=30)
+    db_pool_recycle: int = Field(default=1800, ge=60, le=3600)
     db_connect_timeout: int = Field(default=5, ge=1, le=30)
     db_statement_timeout_ms: int = Field(default=5000, ge=100, le=30000)
 

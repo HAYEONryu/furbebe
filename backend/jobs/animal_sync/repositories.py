@@ -4,14 +4,15 @@ from dataclasses import dataclass
 from datetime import datetime
 from uuid import uuid4
 
-from sqlalchemy import and_, delete, func, or_, select, update
+from sqlalchemy import and_, func, or_, select, update
 from sqlalchemy.dialects.postgresql import insert
 
 from backend.app.db.models import Animal, AnimalImage, AnimalTag, Shelter, SyncRun, Tag
 
 from .client import ApiFailure
 from .normalizer import SOURCE
-from .tagger import CATALOG, GENERATOR, OWNED_KEYS, VERSION, generate_tags
+from .status_policy import is_listed_dog
+from .tagger import CATALOG, GENERATOR, OWNED_KEYS, generate_tags
 
 
 @dataclass(frozen=True)
@@ -20,6 +21,8 @@ class BatchCounts:
     updated: int
     stale: int = 0
     unchanged: int = 0
+    excluded: int = 0
+    deleted: int = 0
 
 
 def chunks(rows, size=1000):
@@ -63,6 +66,18 @@ class SyncRepository:
         expected = {row["key"]: row["type"] for row in CATALOG}
         if any(expected[row.key] != row.type for row in existing):
             raise ApiFailure("TAG_CATALOG_TYPE_CONFLICT")
+        # Keep generated presentation fields current without changing activation or ownership.
+        presentation = insert(Tag).values(CATALOG)
+        self.connection.execute(
+            presentation.on_conflict_do_update(
+                index_elements=[Tag.key],
+                set_={
+                    "label": presentation.excluded.label, "emoji": presentation.excluded.emoji,
+                    "description": presentation.excluded.description,
+                    "display_order": presentation.excluded.display_order,
+                },
+            )
+        )
         return {row.key for row in existing if row.is_active}
 
     def upsert_shelters(self, animals, now):
@@ -110,13 +125,26 @@ class SyncRepository:
         }
         stale = []
         current = []
+        archived = []
+        excluded = 0
         for animal in animals:
             old = existing.get(animal.values["source_id"])
             incoming = animal.values["source_updated_at"]
             if old and old.source_updated_at and incoming and incoming < old.source_updated_at:
                 stale.append(old.id)
+            elif not is_listed_dog(animal.values, today=today):
+                excluded += 1
+                if old:
+                    archived.append(animal)
             else:
                 current.append(animal)
+        for animal in archived:
+            values = dict(animal.values)
+            values["source_updated_at"] = values["source_updated_at"] or existing[animal.values["source_id"]].source_updated_at
+            self.connection.execute(
+                update(Animal).where(Animal.id == existing[animal.values["source_id"]].id)
+                .values(**values, is_active=False, last_seen_at=now, updated_at=now)
+            )
         if stale:
             self.connection.execute(
                 update(Animal)
@@ -129,6 +157,7 @@ class SyncRepository:
             rows = [
                 dict(
                     animal.values,
+                    is_active=True,
                     id=uuid4(),
                     shelter_id=shelters.get(animal.shelter["source_id"])
                     if animal.shelter
@@ -175,8 +204,10 @@ class SyncRepository:
             self.reconcile_images(current, ids)
             active = self.catalog()
             self.reconcile_tags(current, ids, active=active, today=today)
-        inserted = sum(key not in existing for key in keys)
-        counts = BatchCounts(inserted, changed_count - inserted, len(stale), unchanged_count)
+        inserted = sum(animal.values["source_id"] not in existing for animal in current)
+        counts = BatchCounts(
+            inserted, changed_count - inserted + len(archived), len(stale), unchanged_count, excluded, 0
+        )
         # Domain changes and durable counters commit together.
         self.connection.execute(
             update(SyncRun)
@@ -201,7 +232,7 @@ class SyncRepository:
             if row.image_type == "source" and (row.animal_id, row.image_url) not in wanted
         ]
         for block in chunks(obsolete):
-            self.connection.execute(delete(AnimalImage).where(AnimalImage.id.in_(block)))
+            self.connection.execute(update(AnimalImage).where(AnimalImage.id.in_(block)).values(is_active=False))
         rows = [
             dict(
                 id=uuid4(),
@@ -218,7 +249,7 @@ class SyncRepository:
             self.connection.execute(
                 statement.on_conflict_do_update(
                     index_elements=[AnimalImage.animal_id, AnimalImage.image_url],
-                    set_={"sort_order": statement.excluded.sort_order, "image_type": "source"},
+                    set_={"sort_order": statement.excluded.sort_order, "image_type": "source", "is_active": True},
                     # Preserve an independently owned image if its URL happens to match.
                     where=or_(AnimalImage.image_type == "source", AnimalImage.image_type.is_(None)),
                 )
@@ -233,26 +264,31 @@ class SyncRepository:
                 confidence=tag.confidence,
                 evidence=tag.evidence,
                 rule_id=tag.rule_id,
-                generator=GENERATOR,
-                generator_version=VERSION,
+                generator=tag.generator,
+                generator_version=tag.generator_version,
             )
             for animal in animals
             for tag in generate_tags(animal, today=today)
             if tag.tag_key in active
         ]
         wanted = {(row["animal_id"], row["tag_key"]) for row in rows}
+        versions = {(row["animal_id"], row["tag_key"]): row["generator_version"] for row in rows}
         ownership = and_(
             AnimalTag.animal_id.in_(list(ids.values())),
             AnimalTag.generator == GENERATOR,
-            AnimalTag.generator_version == VERSION,
             AnimalTag.tag_key.in_(OWNED_KEYS),
         )
         existing = self.connection.execute(
-            select(AnimalTag.id, AnimalTag.animal_id, AnimalTag.tag_key).where(ownership)
+            select(AnimalTag.id, AnimalTag.animal_id, AnimalTag.tag_key, AnimalTag.generator_version).where(ownership)
         ).all()
-        obsolete = [row.id for row in existing if (row.animal_id, row.tag_key) not in wanted]
+        obsolete = [
+            row.id
+            for row in existing
+            if row.generator_version != versions.get((row.animal_id, row.tag_key))
+            or (row.animal_id, row.tag_key) not in wanted
+        ]
         for block in chunks(obsolete):
-            self.connection.execute(delete(AnimalTag).where(AnimalTag.id.in_(block)))
+            self.connection.execute(update(AnimalTag).where(AnimalTag.id.in_(block)).values(is_active=False))
         for block in chunks(rows):
             statement = insert(AnimalTag).values(block)
             self.connection.execute(
@@ -266,6 +302,6 @@ class SyncRepository:
                     set_={
                         name: statement.excluded[name]
                         for name in ("confidence", "evidence", "rule_id")
-                    },
+                    } | {"is_active": True},
                 )
             )

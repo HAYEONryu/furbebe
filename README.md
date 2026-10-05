@@ -342,3 +342,11 @@ exit code 2: 키/수집/분석 blocker 또는 미확정 의사결정. 상세 사
 
 전체 아키텍처는 Frontend → FastAPI → SQLAlchemy → PostgreSQL을 유지합니다.
 최신 사용자 결정은 Phase 0 감사 및 결정 문서에 기록되어 있습니다.
+
+## Phase 9 quality pass
+
+SSR SEO, sitemap/robots 정책, 이미지·접근성·반응형·오류 검증 및 재실행 명령은 [Phase 9 품질 보고서](docs/phase9-quality.md)에 정리되어 있습니다. 브라우저 smoke test는 `npm --prefix frontend run test:smoke`로 실행합니다. 실제 동물 상세 URL을 sitemap에 넣으려면 빌드 시 `SITEMAP_API_BASE_URL`을 공개 FastAPI origin으로 설정하세요. Phase 10과 실제 배포는 별도 승인 후 진행합니다.
+
+## Phase 10 production preparation
+
+배포 configuration, Cloud Run/DB 연결 예산, DNS/HTTPS 결정사항, secret 이름, CI·sync activation, migration·backup·smoke checklist는 [Phase 10 준비 보고서](docs/phase10-production-preparation.md)를 따릅니다. 실제 deploy/migration/DNS/sync는 실행하지 않았습니다. 운영 Workers 빌드는 `FURBEBE_BUILD_TARGET=production npm --prefix frontend run build`이며, production sync gate는 별도 승인 전 비활성 상태로 유지하세요.
