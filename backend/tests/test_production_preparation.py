@@ -141,12 +141,14 @@ def test_production_cors_debug_and_structured_logs_do_not_echo_query_secrets(mon
 
 def test_migration_plan_is_offline_and_reports_destructive_rollback_without_execution():
     plan = migration_plan(None)
-    assert plan["current_revision"] == "base" and plan["target_revision"] == "20261003_0004"
+    assert plan["current_revision"] == "base" and plan["target_revision"] == "20261005_0005"
     assert "CREATE TABLE animals" in plan["upgrade_sql"]
+    assert "DELETE FROM" not in plan["upgrade_sql"]
+    assert "DROP TABLE" not in plan["upgrade_sql"]
     assert plan["migration_files"][0]["sha256"]
     assert plan["executed_migration"] is False
-    assert not migration_plan("20261003_0004")["migration_files"]
-    assert len(migration_plan("20260915_0001")["migration_files"]) == 3
+    assert not migration_plan("20261005_0005")["migration_files"]
+    assert len(migration_plan("20260915_0001")["migration_files"]) == 4
     with pytest.raises(ConfigurationError):
         migration_plan("unknown")
 
@@ -156,7 +158,7 @@ def test_read_current_is_only_reading_disposable_database(postgres_settings):
     engine = create_database_engine(postgres_settings)
     try:
         # Previous integration fixtures migrate this disposable DB to head.
-        assert read_current(engine) in {None, "20261003_0003"}
+        assert read_current(engine) in {None, "20261005_0005"}
     finally:
         engine.dispose()
 

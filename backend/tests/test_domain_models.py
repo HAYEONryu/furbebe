@@ -91,6 +91,8 @@ def test_metadata_builds_postgresql_ddl_and_registers_all_mappers():
     ],
 )
 def test_required_columns_and_nullable_source_fields(model, required):
+    if model in (Animal, AnimalImage, AnimalTag):
+        required = required | {"is_active"}
     assert {column.name for column in model.__table__.columns if not column.nullable} == required
     if model is Animal:
         for name in SOURCE_TEXTS:
@@ -183,9 +185,9 @@ def test_initial_revision_graph_and_offline_sql():
     output = io.StringIO()
     config = Config(str(Path(__file__).resolve().parents[1] / "alembic.ini"), output_buffer=output)
     script = ScriptDirectory.from_config(config)
-    assert script.get_heads() == ["20261003_0004"]
+    assert script.get_heads() == ["20261005_0005"]
     revisions = list(script.walk_revisions())
-    assert [r.revision for r in revisions] == ["20261003_0004", "20261003_0003", "20261003_0002", "20260915_0001"]
+    assert [r.revision for r in revisions] == ["20261005_0005", "20261003_0004", "20261003_0003", "20261003_0002", "20260915_0001"]
     assert revisions[-1].down_revision is None
     command.upgrade(config, "20260915_0001", sql=True)
     upgrade = output.getvalue()

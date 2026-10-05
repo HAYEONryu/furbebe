@@ -60,7 +60,7 @@ test('keyboard skip link, filter focus trap, Escape and focus restoration', asyn
 test('query SEO, static crawler assets, broken image keeps geometry', async ({ page, request }) => {
   await page.goto('/dogs?q=test&tag=x');
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'noindex, follow');
-  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', 'https://furbebe.com/dogs');
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', 'https://furbebe.site/dogs');
   expect((await request.get('/robots.txt')).status()).toBe(200);
   expect(await (await request.get('/sitemap.xml')).text()).toContain('<urlset');
   await page.goto('/');

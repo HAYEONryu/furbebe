@@ -32,13 +32,13 @@ describe('public FastAPI transport', () => {
 
   it('refuses arbitrary absolute paths before sending a request', async () => {
     const fetchImpl = vi.fn();
-    const client = createApiClient({ baseUrl: 'https://api.furbebe.com', fetchImpl });
+    const client = createApiClient({ baseUrl: 'https://api.furbebe.site', fetchImpl });
     await expect(client.get('https://example.com/data')).rejects.toThrow();
     expect(fetchImpl).not.toHaveBeenCalled();
   });
 
   it('normalizes FastAPI errors without exposing the upstream message or input', async () => {
-    const client = createApiClient({ baseUrl: 'https://api.furbebe.com', fetchImpl: async () => json({
+    const client = createApiClient({ baseUrl: 'https://api.furbebe.site', fetchImpl: async () => json({
       error: { code: 'VALIDATION_ERROR', message: 'SECRET SQL', request_id: REQUEST_ID,
         details: [{ field: 'q', message: 'SECRET INPUT', input: 'SECRET INPUT' }] },
     }, 422) });
@@ -50,7 +50,7 @@ describe('public FastAPI transport', () => {
   });
 
   it.each([404, 503])('normalizes non-JSON HTTP %s with a request ID', async (status) => {
-    const client = createApiClient({ baseUrl: 'https://api.furbebe.com', fetchImpl: async () => new Response('<html>PRIVATE SERVER</html>', {
+    const client = createApiClient({ baseUrl: 'https://api.furbebe.site', fetchImpl: async () => new Response('<html>PRIVATE SERVER</html>', {
       status, headers: { 'content-type': 'text/html', 'x-request-id': REQUEST_ID },
     }) });
     await expect(client.get('/api/v1/animals')).rejects.toMatchObject({ code: 'HTTP_ERROR', status, requestId: REQUEST_ID });
@@ -60,12 +60,12 @@ describe('public FastAPI transport', () => {
     () => new Response('broken', { headers: { 'content-type': 'application/json' } }),
     () => new Response('<html>not JSON</html>', { headers: { 'content-type': 'text/html' } }),
   ])('rejects unreadable success responses', async (response) => {
-    const client = createApiClient({ baseUrl: 'https://api.furbebe.com', fetchImpl: async () => response() });
+    const client = createApiClient({ baseUrl: 'https://api.furbebe.site', fetchImpl: async () => response() });
     await expect(client.get('/api/v1/animals')).rejects.toMatchObject({ code: 'INVALID_RESPONSE', status: 502 });
   });
 
   it('normalizes a failed connection', async () => {
-    const client = createApiClient({ baseUrl: 'https://api.furbebe.com', fetchImpl: async () => { throw new TypeError('private network'); } });
+    const client = createApiClient({ baseUrl: 'https://api.furbebe.site', fetchImpl: async () => { throw new TypeError('private network'); } });
     await expect(client.get('/api/v1/animals')).rejects.toMatchObject({ code: 'NETWORK_ERROR', status: 0 });
   });
 
@@ -74,7 +74,7 @@ describe('public FastAPI transport', () => {
     () => ({ type: 'opaqueredirect', status: 0 }),
   ])('rejects redirects in Workers and browsers without following them', async (response) => {
     const fetchImpl = vi.fn(async () => response());
-    const client = createApiClient({ baseUrl: 'https://api.furbebe.com', fetchImpl });
+    const client = createApiClient({ baseUrl: 'https://api.furbebe.site', fetchImpl });
     await expect(client.get('/api/v1/animals')).rejects.toMatchObject({ code: 'HTTP_ERROR', status: 502 });
     expect(fetchImpl).toHaveBeenCalledTimes(1);
     expect(fetchImpl.mock.calls[0][1].redirect).toBe('manual');
@@ -85,7 +85,7 @@ describe('public FastAPI transport', () => {
     const fetchImpl = vi.fn((_url, { signal }) => new Promise((_resolve, reject) => {
       signal.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')));
     }));
-    const client = createApiClient({ baseUrl: 'https://api.furbebe.com', fetchImpl });
+    const client = createApiClient({ baseUrl: 'https://api.furbebe.site', fetchImpl });
     const request = client.get('/api/v1/animals', { signal: controller.signal });
     controller.abort();
     await expect(request).rejects.toMatchObject({ name: 'AbortError' });
@@ -95,7 +95,7 @@ describe('public FastAPI transport', () => {
 
   it('times out stalled response bodies as well as connections', async () => {
     vi.useFakeTimers();
-    const client = createApiClient({ baseUrl: 'https://api.furbebe.com', timeoutMs: 20,
+    const client = createApiClient({ baseUrl: 'https://api.furbebe.site', timeoutMs: 20,
       fetchImpl: async (_url, { signal }) => ({ ok: true, headers: new Headers({ 'content-type': 'application/json' }),
         json: () => new Promise((_resolve, reject) => signal.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')))),
       }),
@@ -111,7 +111,7 @@ describe('public FastAPI transport', () => {
 
   it('allows a bounded per-request timeout without changing the client default', async () => {
     vi.useFakeTimers();
-    const client = createApiClient({ baseUrl: 'https://api.furbebe.com', timeoutMs: 20,
+    const client = createApiClient({ baseUrl: 'https://api.furbebe.site', timeoutMs: 20,
       fetchImpl: (_url, { signal }) => new Promise((resolve, reject) => {
         const timer = setTimeout(() => resolve(json({ ok: true })), 30);
         signal.addEventListener('abort', () => { clearTimeout(timer); reject(new DOMException('Aborted', 'AbortError')); });

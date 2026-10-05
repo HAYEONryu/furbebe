@@ -67,15 +67,26 @@ def test_only_protected_and_adoptable_dogs_are_stored_and_exclusions_are_not_err
         assert set(connection.scalars(select(Animal.source_id))) == {"eligible", "too-recent", "missing-date"}
 
 
-def test_ended_animals_are_removed_with_children_and_cannot_be_reinserted(sync_engine):
+def test_ended_animals_are_preserved_with_children_and_hidden(sync_engine):
     row = source_row(updTm="2026-09-15T03:00:00Z")
     assert run(sync_engine, [row]).inserted_count == 1
     ended = row | {"processState": "종료(입양)", "updTm": "2026-09-15T04:00:00Z"}
     result = run(sync_engine, [ended])
-    assert result.status == "success" and result.deleted_count == 1
-    assert counts(sync_engine)["animals"] == 0
-    assert counts(sync_engine)["animal_images"] == counts(sync_engine)["animal_tags"] == 0
-    assert run(sync_engine, [ended]).inserted_count == 0
+    assert result.status == "success" and result.deleted_count == 0 and result.updated_count == 1
+    assert counts(sync_engine)["animals"] == 1
+    assert counts(sync_engine)["animal_images"] == 2
+    assert counts(sync_engine)["animal_tags"] > 0
+    with sync_engine.connect() as connection:
+        animal = connection.execute(select(Animal.__table__)).mappings().one()
+        assert animal["is_active"] is False and animal["raw_payload"] == ended
+        from backend.app.repositories.animals import AnimalQueries
+        assert AnimalQueries(connection, NOW.date()).animal(animal["id"]) is None
+        assert AnimalQueries(connection, NOW.date()).overview()["animals_total"] == 0
+    repeat = run(sync_engine, [ended])
+    assert repeat.inserted_count == 0 and repeat.updated_count == 0
+    assert run(sync_engine, [row | {"updTm": "2026-09-15T05:00:00Z"}]).updated_count == 1
+    with sync_engine.connect() as connection:
+        assert connection.scalar(select(Animal.is_active)) is True
 
 
 def test_stale_ended_observation_does_not_delete_current_adoptable_dog(sync_engine):
@@ -98,8 +109,8 @@ def test_initial_insert_repeat_and_durable_counters(sync_engine):
         "animals": 5,
         "shelters": 1,
         "animal_images": 10,
-        "tags": 16,
-        "animal_tags": 25,
+        "tags": 27,
+        "animal_tags": 10,
     }
     second = run(sync_engine, rows, page_size=2)
     assert second.status == "success"
@@ -127,7 +138,7 @@ def test_controlled_update_reconciles_images_tags_and_preserves_identity(sync_en
         )
         old_images = (
             connection.execute(
-                select(AnimalImage.__table__).where(AnimalImage.animal_id == old["id"])
+                select(AnimalImage.__table__).where(AnimalImage.animal_id == old["id"], AnimalImage.is_active.is_(True))
             )
             .mappings()
             .all()
@@ -175,13 +186,13 @@ def test_controlled_update_reconciles_images_tags_and_preserves_identity(sync_en
         )
         images = (
             connection.execute(
-                select(AnimalImage.__table__).where(AnimalImage.animal_id == old["id"])
+                select(AnimalImage.__table__).where(AnimalImage.animal_id == old["id"], AnimalImage.is_active.is_(True))
             )
             .mappings()
             .all()
         )
         tags = set(
-            connection.scalars(select(AnimalTag.tag_key).where(AnimalTag.animal_id == old["id"]))
+            connection.scalars(select(AnimalTag.tag_key).where(AnimalTag.animal_id == old["id"], AnimalTag.is_active.is_(True)))
         )
     for field in ("id", "created_at", "first_seen_at"):
         assert updated[field] == old[field]
@@ -200,6 +211,9 @@ def test_controlled_update_reconciles_images_tags_and_preserves_identity(sync_en
     original = next(image for image in old_images if image["image_url"] == row["popfile2"])
     assert retained["id"] == original["id"] and retained["sort_order"] == 1
     assert tags == {"cream_coat", "sturdy", "human_fixture"}
+    with sync_engine.connect() as connection:
+        assert connection.scalar(select(func.count()).select_from(AnimalImage).where(AnimalImage.animal_id == old["id"], AnimalImage.is_active.is_(False))) == 1
+        assert connection.scalar(select(func.count()).select_from(AnimalTag).where(AnimalTag.animal_id == old["id"], AnimalTag.is_active.is_(False))) > 0
     assert counts(sync_engine)["animals"] == 2
 
 

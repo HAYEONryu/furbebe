@@ -2,9 +2,9 @@ import { expect, it, vi } from 'vitest';
 import { detailShareUrl, shareDetail } from '../app/services/share.js';
 import { ID } from './fixtures.js';
 
-const data = { title: '등록 정보', text: '원문 기반 설명', url: `https://furbebe.com/dogs/${ID}` };
+const data = { title: '등록 정보', text: '원문 기반 설명', url: `https://furbebe.site/dogs/${ID}` };
 it('builds a detail URL on the current origin without query parameters or a fragment', () => {
-  expect(detailShareUrl(ID, 'https://furbebe.com/dogs/old?token=private#shelter')).toBe(data.url);
+  expect(detailShareUrl(ID, 'https://furbebe.site/dogs/old?token=private#shelter')).toBe(data.url);
 });
 it('uses native sharing when available without writing the clipboard', async () => {
   const browser = { share: vi.fn().mockResolvedValue(), clipboard: { writeText: vi.fn() } };

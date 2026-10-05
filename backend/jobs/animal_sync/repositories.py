@@ -138,12 +138,16 @@ class SyncRepository:
                     archived.append(animal)
             else:
                 current.append(animal)
+        archived_changed = 0
         for animal in archived:
             values = dict(animal.values)
             values["source_updated_at"] = values["source_updated_at"] or existing[animal.values["source_id"]].source_updated_at
+            old = existing[animal.values["source_id"]]
+            changed = old.is_active or any(values[name] != old._mapping[name] for name in values)
+            archived_changed += int(changed)
             self.connection.execute(
-                update(Animal).where(Animal.id == existing[animal.values["source_id"]].id)
-                .values(**values, is_active=False, last_seen_at=now, updated_at=now)
+                update(Animal).where(Animal.id == old.id)
+                .values(**values, is_active=False, last_seen_at=now, updated_at=now if changed else old.updated_at)
             )
         if stale:
             self.connection.execute(
@@ -206,7 +210,7 @@ class SyncRepository:
             self.reconcile_tags(current, ids, active=active, today=today)
         inserted = sum(animal.values["source_id"] not in existing for animal in current)
         counts = BatchCounts(
-            inserted, changed_count - inserted + len(archived), len(stale), unchanged_count, excluded, 0
+            inserted, changed_count - inserted + archived_changed, len(stale), unchanged_count, excluded, 0
         )
         # Domain changes and durable counters commit together.
         self.connection.execute(
