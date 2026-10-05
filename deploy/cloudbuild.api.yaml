@@ -1,0 +1,43 @@
+# GitHub manual trigger (Manual invocation): build context is the repository root.
+# Run from Cloud Build's Run trigger button; do not attach a push/PR event.
+# Select the deployment service account on the Cloud Build trigger.
+# This updates an existing Cloud Run service; its runtime settings live in Cloud Run.
+steps:
+  - id: build-api
+    name: gcr.io/cloud-builders/docker
+    # Same image format as the successful manual Cloud Build deployment.
+    env: ['DOCKER_BUILDKIT=0']
+    args:
+      - build
+      - --platform=linux/amd64
+      - -f
+      - backend/Dockerfile
+      - -t
+      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/api:$COMMIT_SHA-$BUILD_ID'
+      - .
+  - id: push-api
+    name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/api:$COMMIT_SHA-$BUILD_ID'
+  - id: update-api
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+    entrypoint: gcloud
+    args:
+      - run
+      - services
+      - update
+      - '${_SERVICE}'
+      - '--project=$PROJECT_ID'
+      - '--region=${_REGION}'
+      - '--image=${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/api:$COMMIT_SHA-$BUILD_ID'
+      - --quiet
+images:
+  - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/api:$COMMIT_SHA-$BUILD_ID'
+substitutions:
+  _REGION: asia-northeast3
+  _REPOSITORY: furbebe
+  _SERVICE: api
+options:
+  logging: CLOUD_LOGGING_ONLY
+timeout: 1200s

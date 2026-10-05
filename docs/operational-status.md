@@ -57,3 +57,13 @@ managed schema, roles/grants, Storage·외부 사진·클라우드 설정은 포
 
 운영 DB에 데이터가 있으므로 “운영 테이블 없음”을 현재 상태로 안내하지 않습니다.
 외부 배포·DNS·정기 수집·외부 백업은 완료된 DB 적재와 별개의 후속 작업입니다.
+
+## 2026-10-06 후속 배포 보고
+
+사용자가 프로젝트 `furbebe-backend`, region `asia-northeast3`에서 Cloud Build 빌드·업로드와
+기존 Cloud Run `api` 서비스 갱신까지 성공했다고 보고했습니다.
+이 기록은 사용자 보고를 근거로 하며 외부 `/health`·실제 데이터 API·DNS·TLS를 재검증한 결과는 아닙니다.
+위 2026-10-05 외부 점검 결과와 구분합니다.
+GitHub API 수동 배포용 `deploy/cloudbuild.api.yaml`과 연결 매뉴얼을 준비했습니다.
+사용자 선호는 GitHub 코드를 연결하되 Run trigger 버튼을 누를 때만 배포하는 방식입니다.
+GitHub repository 연결, 수동 trigger 활성화와 첫 버튼 배포는 아직 확인되지 않았습니다.

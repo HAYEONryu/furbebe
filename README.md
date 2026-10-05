@@ -144,6 +144,7 @@ PostgreSQL 통합 테스트는 별도의 loopback furbebe_test* DB를 FURBEBE_TE
 | DB 구조·migration | [DB 스키마](docs/database-schema.md) |
 | 공개 API 요청·응답 | [API 계약](docs/api-contract.md) |
 | Cloudflare·Cloud Run·Supabase·DNS | [인프라 배포 매뉴얼](docs/infrastructure.md) |
+| GitHub에서 API 수동 배포 | [Cloud Build 연결 매뉴얼](docs/github-deployment.md) |
 | 백업·장애 대응·복구 | [운영 매뉴얼](docs/operations.md) |
 | UI·SEO·광고·후원 | [프런트엔드 안내](docs/frontend.md) |
 | 현재 운영 상태 | [운영 상태](docs/operational-status.md) |

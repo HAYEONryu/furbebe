@@ -19,6 +19,9 @@ API는 **https://api.furbebe.site**입니다.
 Cloud Run YAML에는 project/image/service account/secret version placeholder가 있습니다.
 LB, DB 역할, backup 자동화와 DNS의 완성된 IaC는 저장소에 없습니다.
 CI는 image를 build·검사하지만 registry push나 실제 배포를 하지 않습니다.
+GitHub 코드를 Run trigger 버튼으로 수동 배포하는 Cloud Build 설정은 [deploy/cloudbuild.api.yaml](../deploy/cloudbuild.api.yaml)입니다.
+저장소 연결·배포 계정·Manual invocation 설정은 [GitHub 수동 배포 매뉴얼](github-deployment.md)을 따릅니다.
+Google Cloud에서 수동 trigger를 연결하고 버튼을 눌러 실행합니다.
 
 ## 1. 배포 준비
 
@@ -76,15 +79,44 @@ API image에는 migrations/jobs가 없으므로 container 시작 명령에 migra
 저장소 루트에서 실행합니다. 아래 변수는 계정의 실제 값으로 설정한 후 사용합니다.
 
 ```sh
-docker build -f backend/Dockerfile -t furbebe-api:release .
-docker tag furbebe-api:release "$FURBEBE_IMAGE_TAG"
-docker push "$FURBEBE_IMAGE_TAG"
+docker buildx build --platform linux/amd64 \
+  --provenance=false --sbom=false \
+  -f backend/Dockerfile -t "$FURBEBE_IMAGE_TAG" --push .
+docker buildx imagetools inspect "$FURBEBE_IMAGE_TAG"
 ```
 
 push에는 registry 인증과 기존 repository가 필요합니다. 배포는 tag 대신 확인한 sha256 digest로 고정합니다.
+Cloud Run은 linux/amd64 실행 이미지를 사용합니다. 위 명령은 빌드 증명용 manifest 생성을 끕니다.
+digest는 inspect의 최상위 Digest 또는 검증한 linux/amd64 실행 manifest를 사용하며,
+unknown/unknown 또는 attestation-manifest의 digest를 선택하지 않습니다.
+[Cloud Run 이미지 조건](https://docs.cloud.google.com/run/docs/container-contract),
+[Docker 빌드 증명 형식](https://docs.docker.com/build/metadata/attestations/attestation-storage/)
 Docker는 Python 3.14 slim, UID 10001 nonroot, 프로세스 1개, 8080 포트, reload/debug off입니다.
 .dockerignore는 API source/지역 사전/runtime requirements만 허용합니다.
 .env·원천 capture·백업·jobs·migration·test·가상환경은 image에 없습니다.
+
+### Cloud Shell Docker 업로드 연결 실패
+
+`docker push`가 `dial tcp ...:443: connect: connection refused`로 실패하면
+image 생성과 registry 업로드를 구분합니다. 로컬 image가 있어도 push가 완료되지 않으면 Cloud Run에서 tag를 찾을 수 없습니다.
+Shell의 curl이 HTTP 응답을 받아도 Docker daemon의 접속 경로가 정상이라는 뜻은 아닙니다.
+반복되는 경우 Cloud Build 실행 환경에서 image를 생성하고 push하는 대안을 사용합니다.
+정확한 Cloud Shell 네트워크 원인은 별도 확인하며, 이 대안의 성공을 미리 단정하지 않습니다.
+
+Cloud Build API를 활성화하고, 빌드 서비스 계정의 source bucket 읽기·로그 쓰기·해당 repository 쓰기 권한을 확인합니다.
+기본 빌드 계정은 프로젝트에 따라 다르므로 고정된 이메일을 추측하지 않습니다.
+`gcloud builds get-default-service-account`로 확인할 수 있습니다.
+[Cloud Build 빌드·업로드](https://docs.cloud.google.com/build/docs/build-push-docker-image),
+[기본 빌드 계정](https://docs.cloud.google.com/build/docs/cloud-build-service-account-updates)
+
+빌드 설정의 Docker 단계는 저장소 루트에서 `backend/Dockerfile`을 사용합니다.
+Docker 20.10/24 기반 공식 builder의 `DOCKER_BUILDKIT=0`과 `--platform linux/amd64`로
+빌드 증명 manifest 없이 실행 image를 생성할 수 있습니다. `images` 항목에 같은 image tag를 지정해 업로드합니다.
+Cloud Build에 보내는 source에도 secret이 들어가지 않아야 합니다.
+`.dockerignore`를 별도 `.gcloudignore-api`로 복사한 뒤 `!backend/Dockerfile`, `!.dockerignore`,
+사용할 빌드 YAML 파일의 허용 항목을 추가하고, submit에 `--ignore-file=.gcloudignore-api`를 지정합니다.
+Docker의 ignore 규칙만으로 Cloud Build source 업로드가 제한된다고 가정하지 않습니다.
+빌드 결과 SUCCESS와 registry의 새 tag를 확인한 뒤 기존 Cloud Run 서비스의 이미지만 변경합니다.
 
 ## 5. Cloud Run
 
@@ -115,6 +147,15 @@ gcloud run services describe furbebe-api --project "$FURBEBE_GCP_PROJECT" --regi
 
 API는 APP_ENV=production, HTTPS FRONTEND_ORIGIN 두 개, 일반 DATABASE_URL secret으로 실행합니다.
 일반 API template에 FURBEBE_DATABASE_TARGET=supabase-prod를 추가하면 suffixed secret이 없어 설정 오류가 날 수 있습니다.
+
+### 이미지 가져오기 실패
+
+Container import failed와 함께 `Manifest.Layers vs ConfigFile.RootFS.DiffIDs`가 표시되면
+배포한 manifest가 실제 실행 이미지인지 확인합니다. 빌드 증명용 OCI artifact도 registry에 함께 표시될 수 있으며,
+그 artifact의 빈 config는 실행 가능한 root filesystem 정보를 갖고 있지 않습니다.
+위 빌드 명령으로 새 tag를 push하고 실제 실행 이미지 또는 최상위 image index를 선택해 다시 배포합니다.
+이 단계의 실패는 앱 실행 전 발생하므로 포트·DB 설정·startup timeout 변경으로 해결하지 않습니다.
+기존 Cloud Run 서비스에서는 이미지 필드만 변경해 환경변수와 secret 참조를 유지합니다.
 
 외부 LB 경로의 공개 GET 요청은 Cloud Run invocation 설정도 맞아야 합니다.
 선택한 공개 방식에 따라 invoker IAM 또는 invoker check 설정을 검토합니다.

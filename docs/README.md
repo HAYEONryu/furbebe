@@ -16,6 +16,7 @@
 | [프런트엔드](frontend.md) | SSR, URL 상태, 관심 저장, 공유, 이미지, SEO, AdSense, 후원 |
 | [검증](quality.md) | 단위·DB·브라우저·컨테이너·CI 실행 및 해석 |
 | [인프라](infrastructure.md) | Supabase, Cloud Run, HTTPS LB, Cloudflare, 배포·롤백 |
+| [GitHub API 수동 배포](github-deployment.md) | Cloud Build 저장소 연결·Run trigger 버튼·배포 계정·확인 |
 | [운영](operations.md) | 백업, 복구, 데이터 갱신, 관측, 장애 진단 |
 | [운영 상태](operational-status.md) | 실제 확인한 운영 DB와 미완료 외부 배포 |
 | [원천 분석 도구](source-analysis.md) | 선택적 profiling·참조 코드 분석과 비공개 보고서 |
