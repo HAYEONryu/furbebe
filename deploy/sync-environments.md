@@ -20,25 +20,26 @@ DEV 수동 실행은 날짜/full_scan 입력과 무관하게 --full입니다.
 
 ## PROD job 설정
 
-Environment **production-sync**를 만듭니다.
+Environment **production-sync**를 사용합니다.
 production secret을 이 environment에 제한하고 가능한 plan에서는 필요한 reviewer와 main branch 제한을 설정합니다.
 
 | GitHub environment 항목 | 이름 | 프로세스 변수 |
 | --- | --- | --- |
-| secret | DATABASE_URL_prod | DATABASE_URL_prod |
+| secret | DATABASE_URL_PROD | DATABASE_URL_prod |
 | secret | DATA_GO_KR_SERVICE_KEY | DATA_GO_KR_SERVICE_KEY |
-| variable | SUPABASE_URL_prod | SUPABASE_URL_prod |
+| variable | SUPABASE_URL_PROD | SUPABASE_URL_prod |
 | variable | FURBEBE_PROD_PROJECT_REF | FURBEBE_PROD_PROJECT_REF |
 
 APP_ENV=production, HTTPS FRONTEND_ORIGIN과 pool 1+1은 workflow에서 고정합니다.
 프로젝트 ref와 URL·접속 사용자/호스트는 대상 guard가 검사합니다.
-environment 저장소 이름은 workflow와 **대소문자까지 동일하게** 구성합니다.
+GitHub secret/variable 이름은 대소문자를 구분하지 않으며, 프로세스 변수 이름은 표와 동일하게 유지합니다.
+이름이 같은 environment 값은 repository 값보다 우선합니다. Environment 값이 없으면 repository secret/variable도 사용합니다.
 
 ## 수동 PROD 실행
 
 Actions > Animal Sync > Run workflow:
 
-1. 검토된 branch와 target=supabase-prod.
+1. 검토된 branch와 target=supabase-prod (기본값).
 2. production_confirmation=APPROVED_PRODUCTION_SYNC.
 3. 기본은 오늘과 이전 6일의 KST 7일 범위, raw total 최대 1000.
 4. 다른 날짜는 YYYY-MM-DD로 시작·종료를 모두 검토.
