@@ -6,8 +6,8 @@ on:
       target:
         description: Database target
         type: choice
-        options: [supabase-dev, supabase-prod]
-        default: supabase-dev
+        options: [supabase-prod, supabase-dev]
+        default: supabase-prod
       production_confirmation:
         description: Type APPROVED_PRODUCTION_SYNC for production
         type: string
@@ -72,7 +72,7 @@ jobs:
     env:
       APP_ENV: production
       DATA_GO_KR_SERVICE_KEY: ${{ secrets.DATA_GO_KR_SERVICE_KEY }}
-      DATABASE_URL_prod: ${{ secrets.DATABASE_URL_prod }}
+      DATABASE_URL_prod: ${{ secrets.DATABASE_URL_PROD }}
       SUPABASE_URL_prod: ${{ vars.SUPABASE_URL_prod }}
       FURBEBE_PROD_PROJECT_REF: ${{ vars.FURBEBE_PROD_PROJECT_REF }}
       FRONTEND_ORIGIN: https://furbebe.site,https://www.furbebe.site
@@ -84,6 +84,20 @@ jobs:
       SYNC_END_DATE: ${{ inputs.end_date }}
       SYNC_FULL_SCAN: ${{ inputs.full_scan }}
     steps:
+      - name: Validate production sync configuration
+        run: |
+          python - <<'PY'
+          import os
+          required = {
+              'DATA_GO_KR_SERVICE_KEY': 'secret DATA_GO_KR_SERVICE_KEY',
+              'DATABASE_URL_prod': 'secret DATABASE_URL_PROD',
+              'SUPABASE_URL_prod': 'variable SUPABASE_URL_prod',
+              'FURBEBE_PROD_PROJECT_REF': 'variable FURBEBE_PROD_PROJECT_REF',
+          }
+          missing = [label for key, label in required.items() if not os.environ.get(key)]
+          if missing:
+              raise SystemExit('Missing production sync configuration: ' + ', '.join(missing))
+          PY
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
