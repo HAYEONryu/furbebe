@@ -67,3 +67,14 @@ managed schema, roles/grants, Storage·외부 사진·클라우드 설정은 포
 GitHub API 수동 배포용 `deploy/cloudbuild.api.yaml`과 연결 매뉴얼을 준비했습니다.
 사용자 선호는 GitHub 코드를 연결하되 Run trigger 버튼을 누를 때만 배포하는 방식입니다.
 GitHub repository 연결, 수동 trigger 활성화와 첫 버튼 배포는 아직 확인되지 않았습니다.
+
+## 2026-10-09 GitHub Animal Sync 운영 대상 설정
+
+최근 예약 실행 37839663200은 development 성공, production skipped였습니다.
+repository variable PRODUCTION_SYNC_ENABLED=true를 등록해 이후 예약 실행 대상을 production으로 전환했습니다.
+SUPABASE_URL_PROD=https://xhlenzdnqnbczekkovgl.supabase.co와 FURBEBE_PROD_PROJECT_REF=xhlenzdnqnbczekkovgl도 등록했습니다.
+수동 실행 target 기본값은 supabase-prod로 변경했고, 운영 설정 누락 시 secret 값을 출력하지 않는 사전 검사를 추가했습니다.
+YAML 문법, inline Python 문법과 DEV/PROD 실행 분기 12개 경우를 검증했습니다.
+
+GitHub 설정 확인 시 DATABASE_URL_PROD secret이 없어 운영 DB 연결과 실제 production sync 성공은 미검증입니다.
+운영 Session pooler 연결 URL(port 5432)을 repository 또는 production-sync environment secret DATABASE_URL_PROD에 등록한 후 수동 실행 검증이 필요합니다.
