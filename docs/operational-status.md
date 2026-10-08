@@ -78,3 +78,19 @@ YAML 문법, inline Python 문법과 DEV/PROD 실행 분기 12개 경우를 검�
 
 GitHub 설정 확인 시 DATABASE_URL_PROD secret이 없어 운영 DB 연결과 실제 production sync 성공은 미검증입니다.
 운영 Session pooler 연결 URL(port 5432)을 repository 또는 production-sync environment secret DATABASE_URL_PROD에 등록한 후 수동 실행 검증이 필요합니다.
+
+### 2026-10-09 07:47 KST: 운영 수집 실행 검증 완료
+
+사용자가 repository secret DATABASE_URL_PROD를 등록한 뒤 main에서 target=supabase-prod, full_scan=true로 수동 실행했습니다.
+[Animal Sync #13](https://github.com/HAYEONryu/furbebe/actions/runs/37855375045)의 production job은 success, development job은 skipped입니다.
+위 Secret 미등록·연결 미검증 상태는 이 후속 검증으로 해소했습니다.
+
+- 운영 프로젝트: xhlenzdnqnbczekkovgl; database_target=supabase-prod, APP_ENV=production.
+- sync ID: f3504819-bead-4a9e-bb20-a059e555f858.
+- 수신/고유 원천 ID: 6,903건; 마지막 빈 페이지 포함 8페이지.
+- 신규 저장: 602건; 갱신: 438건; unchanged: 2,150건; 원천 비대상 제외: 3,908건.
+- 오류·거부·중복·삭제·API/DB 재시도: 각각 0; status=success, run_persisted=true.
+- 수집 소요: 152.8초; workflow 전체: 2분 51초.
+
+PRODUCTION_SYNC_ENABLED=true에 따라 다음 예약 실행도 운영 대상을 선택하도록 설정되어 있습니다.
+예약 이벤트의 실제 후속 성공과 공개 API 응답은 이번 수동 수집 검증에 포함하지 않았습니다.
